@@ -95,6 +95,7 @@ details>div{padding-bottom:14px}
 .pill{display:inline-block;font-size:12px;border-radius:999px;padding:1px 9px;background:#f1ece4;color:#5b524a;margin-left:4px}
 .out,.act,.card,a.src,.fabox,.enbox{overflow-wrap:anywhere;word-break:break-word}
 main{overflow-x:clip}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}.calh{text-align:center;font-size:12px;color:var(--muted)}.calc{position:relative;border:1px solid var(--line);background:#fff;border-radius:10px;padding:4px 0 2px;font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;min-height:54px;color:var(--ink)}.calc b{font-size:15px;line-height:1.3}.calc small{font-size:10px;color:var(--muted);font-family:Nunito,sans-serif;line-height:1.2}.calc i{font-style:normal;font-size:11px;line-height:1.2}.calc.occ{background:#eaf8ef;border-color:#bfe6cc}.calc.calm{background:#f1ecfa;border-color:#d8ccef}.calc.today{border:2px solid var(--brand)}.calc.sel{background:var(--ink);color:#fff}.calc.sel small{color:#ddd}
 footer{color:var(--muted);font-size:13px;text-align:center;padding:20px}
 </style>
 </head>
@@ -971,6 +972,7 @@ function viewClass(){
   <label>سطح انگلیسی بچه‌ها</label>${chips("level",[["zero","کاملاً مبتدی"],["beg","کمی آشنا"],["mid","چند جمله بلدند"]],false,c.level)}
   <label>فضا</label>${chips("space",[["small","کلاس کوچک"],["room","کلاس معمولی"],["yard","حیاط یا فضای باز دارد"]],false,c.space)}
   <label>رویکرد</label>${chips("approach",APPROACH_OPTS,false,c.approach)}
+  ${classDateBlock(c)}
   <label>موضوع درس این جلسه</label>${chips("theme",Object.entries(THEMES).map(([k,t])=>[k,`${t.ic} ${t.fa}`]),false,c.theme)}
   <label>هوش‌های غالب بچه‌ها <span class="pill">اختیاری، چندتایی</span></label>${chips("intel",GARDNER.map(g=>[g.k,`${g.ic} ${INTEL_SHORT[g.k]}`]),true,c.intel)}
  </div>
@@ -1176,7 +1178,7 @@ function buildPlan(c){
   ...(tr.length?["تطبیق‌های بچه‌های خاص را مرور کنید (بخش «راهکار برای هر کودک»)"]:[])
  ];
  const parent = `سلام، وقت بخیر 🌷\nامروز در کلاس انگلیسی درباره‌ی «${T.fa}» یاد گرفتیم.\nکلمه‌های امروز: ${words.join("، ")}\nجمله‌ی امروز: ${T.say[0]}\n\n🎵 آهنگ تمرین در خانه: ${SONGS[midSong].t}\n${yt(SONGS[midSong].q)}\n\n🏠 بازی پیشنهادی در خانه: چند وسیله‌ی مربوط به «${T.fa}» را نشان دهید و بپرسید What's this? یا «Bring me…!» بازی کنید. فقط ۵ دقیقه و با شادی، بدون اجبار.\n${on?`\n📦 برای جلسه‌ی بعد لطفاً آماده کنید: کاغذ، مداد رنگی و یک اسباب‌بازی.\n`:""}\nممنون از همراهی‌تان 🙏`;
- return {P, M, songs, videos, prep, parent, T, TM, words, g1};
+ return applyOccasion(c,{P, M, songs, videos, prep, parent, T, TM, words, g1});
 }
 
 function linkA(t,u){ return `<a class="src" href="${u}" target="_blank" rel="noopener">${esc(t)}</a>`; }
@@ -1194,10 +1196,11 @@ function planHTML(c){
  const cat = (ic,title,arr)=> arr.length?`<h4>${ic} ${title}</h4>${checklist(cid+"_"+title.length+ic.codePointAt(0), arr.map(esc))}`:"";
  return `
  <div class="card" style="margin-top:16px;background:linear-gradient(135deg,#fff1e8,#eef4ff)"><h3 style="margin-top:0">${R.T.ic} طرح درس: ${esc(R.T.fa)}</h3>
- <div class="facts"><div class="fact"><b>نوع کلاس</b>${fmtName}</div><div class="fact"><b>تعداد</b>${esc((COUNT_OPTS.find(x=>x[0]===c.count)||["",c.count])[1])}</div><div class="fact"><b>سن</b>${c.age==="mix"?"مختلط":faN(c.age)+" سال"}</div><div class="fact"><b>مدت</b>${faN(c.dur)} دقیقه</div></div>
+ <div class="facts"><div class="fact"><b>نوع کلاس</b>${fmtName}</div><div class="fact"><b>تعداد</b>${esc((COUNT_OPTS.find(x=>x[0]===c.count)||["",c.count])[1])}</div><div class="fact"><b>سن</b>${c.age==="mix"?"مختلط":faN(c.age)+" سال"}</div><div class="fact"><b>مدت</b>${faN(c.dur)} دقیقه</div><div class="fact"><b>تاریخ</b>${esc(faDate(fromIso(c.date)))}</div></div>
  <p style="margin:6px 0 0">لغت‌ها: ${en(R.words.join(" · "))}</p><p style="margin:0">جمله‌ها: ${en(R.T.say.slice(0,3).join(" · "))}</p>
  <p style="font-size:14px;margin:6px 0 0">🎯 هدف جلسه: بچه‌ها در پایان کلاس ${c.level==="zero"?"لغت‌های امروز را بفهمند و با حرکت یا اشاره نشان دهند":"لغت‌های امروز را بفهمند و بگویند و جمله‌ی اصلی را در بازی به کار ببرند"}.</p></div>
 
+ ${R.occ?`<div class="ok" style="margin:12px 0"><b>${R.occ.ic} این جلسه به مناسبت «${esc(R.occ.fa)}» است.</b> فعالیت ویژه‌ی مناسبت در طرح درس آمده (🎉).${R.occ.note?`<br>⚠️ ${esc(R.occ.note)}`:""}</div>`:""}
  <div class="card tint" style="--c:#7a6ff0"><h3 style="margin-top:0">✅ قبل از کلاس آماده کنید</h3>${checklist(cid+"_prep", R.prep.map(esc))}</div>
 
  <div class="card tint" style="--c:#f0a020"><h3 style="margin-top:0">🗂️ وسایل لازم (دسته‌بندی‌شده)</h3>
@@ -1231,7 +1234,7 @@ function planText(c){
  const R=buildPlan(c), A=analysis(c); let t=0;
  const strip=h=>h.replace(/<[^>]+>/g,"");
  const L=(title,arr)=>arr.length?`\n${title}:\n- ${arr.join("\n- ")}`:"";
- return `طرح درس: ${R.T.fa} | ${(FORMAT_OPTS.find(f=>f[0]===c.format)||["",""])[1]} | ${c.age==="mix"?"سنین مختلط":c.age+" سال"} | ${c.dur} دقیقه\nلغت‌ها: ${R.words.join(", ")}\n`+
+ return `طرح درس: ${R.T.fa} | ${(FORMAT_OPTS.find(f=>f[0]===c.format)||["",""])[1]} | ${c.age==="mix"?"سنین مختلط":c.age+" سال"} | ${c.dur} دقیقه\nتاریخ: ${faDate(fromIso(c.date))}${R.occ?"\n🎉 مناسبت: "+R.occ.fa:""}\nلغت‌ها: ${R.words.join(", ")}\n`+
  L("✅ قبل از کلاس",R.prep)+L("🖨️ چاپی",R.M.print)+L("🧸 وسایل",R.M.real)+L("🎨 هنری",R.M.art)+L("🔊 صوتی تصویری",R.M.av)+L("💻 آنلاین",R.M.online)+
  `\n\n🎵 آهنگ‌ها:\n${R.songs.map(k=>`- ${SONGS[k].t}: ${yt(SONGS[k].q)}`).join("\n")}\n🎬 ویدیوها:\n${R.videos.map(v=>`- ${v.t}: ${v.u}`).join("\n")}\n\n📋 اجرا:\n`+
  R.P.map(p=>{const s=t;t+=p.min;return `⏱️ ${s}-${t}: ${p.t}\n${strip(p.what)}${(p.say||[]).length?"\n🗣️ "+p.say.join(" / "):""}${(p.songs||[]).length?"\n🎵 "+p.songs.map(k=>SONGS[k].t).join("، "):""}${p.adapt.length?"\n🔧 "+p.adapt.join(" | "):""}`}).join("\n\n")+
@@ -1365,12 +1368,142 @@ function viewNews(){
  <a class="src" href="${esc(i.link)}" target="_blank" rel="noopener">📖 متن اصلی</a> &nbsp; <a class="src" href="${tr(i.link)}" target="_blank" rel="noopener">🌐 ترجمه‌ی فارسی</a></div>`).join("")}`;
 }
 
+/* ===================== تقویم و مناسبت‌ها ===================== */
+const FA_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+const H_MONTHS = ["محرم","صفر","ربیع‌الاول","ربیع‌الثانی","جمادی‌الاول","جمادی‌الثانی","رجب","شعبان","رمضان","شوال","ذی‌القعده","ذی‌الحجه"];
+const G_MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const FA_WD = ["یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه","شنبه"];
+let PF=null, HF=null;
+try{ PF=new Intl.DateTimeFormat("en-u-ca-persian",{year:"numeric",month:"numeric",day:"numeric"}); if(PF.resolvedOptions().calendar!=="persian") PF=null; }catch(e){ PF=null; }
+try{ HF=new Intl.DateTimeFormat("en-u-ca-islamic-umalqura",{year:"numeric",month:"numeric",day:"numeric"}); if(!/islamic/.test(HF.resolvedOptions().calendar)) HF=null; }catch(e){ HF=null; }
+function parts(f,d){ const o={}; f.formatToParts(d).forEach(p=>{ if(p.type==="year"||p.type==="month"||p.type==="day") o[p.type[0]]=parseInt(p.value.replace(/[^\d]/g,""),10); }); return o; }
+const J = d => PF ? parts(PF,d) : null;
+const H = d => HF ? parts(HF,d) : null;
+const mkDate = (y,m,d)=> new Date(y,m,d,12);
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const fromIso = s => { const [y,m,d]=(s||"").split("-").map(Number); return y?mkDate(y,m-1,d):mkDate(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()); };
+const addDays = (d,n)=> mkDate(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const todayD = ()=>{ const t=new Date(); return mkDate(t.getFullYear(),t.getMonth(),t.getDate()); };
+function faDate(d){ const j=J(d); const wd=FA_WD[d.getDay()]; return j?`${wd} ${faN(j.d)} ${FA_MONTHS[j.m-1]} ${faN(j.y)}`:wd; }
+function gDate(d){ return `${d.getDate()} ${G_MONTHS[d.getMonth()]} ${d.getFullYear()}`; }
+function hDate(d){ const h=H(d); return h?`${faN(h.d)} ${H_MONTHS[h.m-1]} ${faN(h.y)}`:""; }
+
+/* type: J = شمسی، G = میلادی، H = قمری (ماه-روز) ؛ calm = روز سوگواری/آرام */
+const OCCASIONS = [
+ {id:"nowruz",on:["J:1-1","J:1-2","J:1-3","J:1-4"],fa:"نوروز",en:"Nowruz (Persian New Year)",ic:"🌱",theme:"family",words:["spring","flower","fish","egg","grass","gift","family","new year"],say:["Happy Nowruz!","Happy New Year!","This is a goldfish."],act:"سفره‌ی هفت‌سین به انگلیسی: وسایل هفت‌سین (یا تصویرشان) را بچینید و هر کدام را به انگلیسی معرفی کنید: This is an apple. This is a fish.",craft:"رنگ کردن تخم‌مرغ (کاغذی یا واقعی) و کارت تبریک Happy Nowruz.",mats:["تخم‌مرغ کاغذی یا آب‌پز","رنگ و قلم‌مو","وسایل یا تصویر هفت‌سین"],q:"spring song for kids",note:"معمولاً تعطیل است. این طرح را برای هفته‌ی آخر اسفند استفاده کنید."},
+ {id:"sizdah",on:["J:1-13"],fa:"سیزده‌بدر (روز طبیعت)",en:"Nature Day",ic:"🌳",theme:"weather",words:["picnic","tree","grass","sun","flower","bird","park"],say:["Let's go on a picnic!","I see a tree.","Make a wish!"],act:"پیک‌نیک بازی در حیاط یا روی فرش کلاس: پهن کردن زیرانداز، تعارف کردن میوه و نام بردن چیزهای طبیعت.",craft:"گره زدن سبزه‌ی کاغذی و گفتن آرزو به انگلیسی: I wish…",mats:["زیرانداز","میوه‌ی پلاستیکی","کاغذ سبز"],q:"going on a picnic song for kids"},
+ {id:"teacherIR",on:["J:2-12"],fa:"روز معلم (ایران)",en:"Teacher's Day",ic:"🍎",theme:"family",words:["teacher","school","thank you","friend","book","pencil"],say:["Thank you, teacher!","I love my school.","Who is your teacher?"],act:"بازی «من معلمم»: هر بچه یک دقیقه معلم کلاس می‌شود و یک دستور TPR می‌دهد.",craft:"کارت تشکر Thank you با دست‌های رنگی بچه‌ها.",mats:["مقوا","رنگ انگشتی"],q:"thank you song for kids"},
+ {id:"summer",on:["J:4-1"],fa:"شروع تابستان",en:"First day of summer",ic:"☀️",theme:"weather",words:["summer","sun","hot","beach","ice cream","swim","sunglasses"],say:["It's summer!","It's hot!","I like ice cream."],act:"ساک سفر تابستانی: بچه‌ها وسایل تابستانی را در ساک می‌گذارند و نام می‌برند: Put the sunglasses in the bag!",craft:"بستنی کاغذی با رنگ‌های مختلف.",mats:["ساک","عینک آفتابی و کلاه","کاغذ رنگی"],q:"summer song for kids"},
+ {id:"mehr",on:["J:7-1"],fa:"شروع سال تحصیلی و پاییز",en:"Back to school / Autumn",ic:"🎒",theme:"toys",words:["school","bag","pencil","book","friend","teacher","autumn","leaf"],say:["Hello, friend!","This is my bag.","Welcome back to school!"],act:"بازی معرفی با توپ: What's your name? – I'm…؛ بعد کیف‌های بچه‌ها: What's in your bag?",craft:"تاج برگ پاییزی یا برچسب اسم با رنگ مورد علاقه.",mats:["توپ نرم","برگ‌های واقعی یا کاغذی","کاغذ و چسب"],q:"back to school song for kids"},
+ {id:"childIR",on:["J:7-16"],fa:"روز ملی کودک و جشن مهرگان",en:"National Children's Day",ic:"🧒",theme:"feelings",words:["child","happy","play","friend","autumn","leaf","party"],say:["Happy Children's Day!","Let's play!","I'm happy!"],act:"جشن کوچک کلاس با بازی‌های مورد علاقه‌ی بچه‌ها. هر بچه می‌گوید: I like to play…",craft:"تاج برگ پاییزی یا کارت «من بزرگ می‌شوم».",mats:["برگ‌های پاییزی","مقوا","چسب"],q:"let's play song for kids"},
+ {id:"yalda",on:["J:9-30"],fa:"شب یلدا",en:"Yalda Night",ic:"🍉",theme:"fruits",words:["night","long","dark","watermelon","pomegranate","story","red","winter"],say:["It's Yalda night!","It's a long night.","I like pomegranates."],act:"شب قصه: نور اتاق را کم کنید و با چراغ‌قوه قصه بگویید. بعد با میوه‌های یلدا (یا تصویرشان) بازی مغازه کنید.",craft:"انار و هندوانه‌ی کاغذی با دانه‌های رنگی.",mats:["چراغ‌قوه","انار و هندوانه (یا تصویر)","کاغذ قرمز و سبز"],q:"winter night song for kids"},
+ {id:"winter",on:["J:10-1"],fa:"شروع زمستان",en:"First day of winter",ic:"❄️",theme:"clothes",words:["winter","snow","cold","coat","hat","scarf","snowman"],say:["It's cold!","Put on your coat.","Let's make a snowman!"],act:"لباس پوشاندن عروسک برای زمستان: Put on the scarf!",craft:"آدم‌برفی با پنبه و کاغذ.",mats:["پنبه","کاغذ آبی","لباس عروسک"],q:"winter song for kids"},
+ {id:"chaharshanbe",fa:"چهارشنبه‌سوری",en:"Chaharshanbe Suri",ic:"🔥",theme:"body",words:["fire","jump","light","safe","careful","hot"],say:["Jump over!","Be careful!","Fire is hot!"],act:"بازی پریدن از آتش کاغذی (نوار قرمز روی زمین): Jump! Hop! همراه با گفتگوی کوتاه درباره‌ی ایمنی: Fire is hot. Be careful!",craft:"شعله‌ی کاغذی با دست‌های رنگ‌شده.",mats:["نوار کاغذی قرمز و زرد","رنگ"],q:"jump song for kids",rule:"lastTueEsfand"},
+ {id:"motherIR",on:["H:6-20"],fa:"روز مادر",en:"Mother's Day",ic:"💐",theme:"family",words:["mom","love","flower","heart","hug","kiss","gift"],say:["I love you, Mom!","This is for you.","Happy Mother's Day!"],act:"هر بچه درباره‌ی مادرش یک جمله می‌گوید: My mom is… / My mom likes… بعد تمرین تقدیم هدیه: This is for you!",craft:"کارت گل با اثر دست: I love you, Mom.",mats:["مقوا","رنگ انگشتی","کاغذ رنگی برای گل"],q:"I love you mommy song for kids"},
+ {id:"fatherIR",on:["H:7-13"],fa:"روز پدر",en:"Father's Day",ic:"👔",theme:"family",words:["dad","strong","help","love","tie","hug"],say:["I love you, Dad!","My dad is strong.","Happy Father's Day!"],act:"بازی «بابا چه کار می‌کند؟»: ادای کارهای پدر: Dad drives the car. Dad cooks.",craft:"کارت کراوات کاغذی.",mats:["مقوا","کاغذ رنگی","چسب"],q:"daddy finger song for kids"},
+ {id:"mabath",on:["H:7-27"],fa:"عید مبعث",en:"Mab'ath",ic:"✨",theme:"feelings",words:["happy","light","kind","friend"],say:["Be kind!","I'm happy!"],act:"بازی مهربانی: هر بچه یک کار مهربانانه را ادا می‌کند و بقیه حدس می‌زنند: Help, share, hug.",craft:"ستاره‌ی کاغذی نورانی.",mats:["کاغذ زرد","چسب اکلیلی (اختیاری)"],q:"be kind song for kids"},
+ {id:"shaban",on:["H:8-15"],fa:"نیمه‌ی شعبان",en:"Mid-Sha'ban celebration",ic:"🏮",theme:"shapes",words:["light","lantern","star","moon","night","party"],say:["Look at the lights!","It's a star.","It's a moon."],act:"جشن نور: شکل‌های ستاره و ماه را در کلاس پیدا کنید و چراغ‌قوه را روی آن‌ها بیندازید.",craft:"فانوس کاغذی.",mats:["کاغذ رنگی","قیچی کودک","چراغ‌قوه"],q:"lantern song for kids"},
+ {id:"ramadan",on:["H:9-1"],fa:"شروع ماه رمضان",en:"Ramadan begins",ic:"🌙",theme:"shapes",words:["moon","night","star","share","kind"],say:["Look at the moon!","Let's share."],act:"قصه‌ی ماه و ستاره‌ها و بازی تقسیم کردن: Let's share!",craft:"هلال ماه کاغذی.",mats:["کاغذ زرد و آبی"],q:"moon song for kids",note:"ممکن است بعضی خانواده‌ها روزه باشند. فعالیت خوراکی را با هماهنگی انجام دهید."},
+ {id:"fitr",on:["H:10-1"],fa:"عید فطر",en:"Eid al-Fitr",ic:"🎉",theme:"feelings",words:["happy","gift","party","family","sweet"],say:["Happy Eid!","This is a gift for you."],act:"بازی هدیه: جعبه‌ی هدیه‌ی رازآلود دست‌به‌دست می‌شود و هر کس باز می‌کند، اسم وسیله‌ی داخلش را می‌گوید.",craft:"کارت تبریک عید.",mats:["جعبه‌ی هدیه","وسایل کوچک برای داخل جعبه"],q:"celebration song for kids"},
+ {id:"ghadir",on:["H:12-18"],fa:"عید غدیر",en:"Eid al-Ghadir",ic:"🎊",theme:"feelings",words:["happy","party","friend","gift"],say:["Happy Eid!","Let's celebrate!"],act:"جشن کوچک کلاس با بازی‌های شاد و تبریک به هم: Happy Eid!",craft:"پرچم کاغذی جشن.",mats:["کاغذ رنگی","نخ"],q:"party song for kids"},
+ {id:"tasua",on:["H:1-9","H:1-10"],fa:"تاسوعا و عاشورا",en:"Tasua & Ashura",ic:"🕊️",calm:true,theme:"feelings",words:["kind","share","water","help","friend"],say:["Let's share.","Be kind."],act:"روز آرام: فعالیت‌های بی‌صدا، قصه‌ی آرام درباره‌ی مهربانی و تقسیم کردن (مثلاً تقسیم آب و خوراکی). آهنگ شاد و رقص را حذف کنید.",craft:"کاشتن دانه یا نقاشی آرام.",mats:["لیوان و خاک و دانه"],q:"kindness story for kids",note:"تعطیل رسمی است. اگر کلاس دارید، فضای آرام و محترمانه داشته باشید."},
+ {id:"newyear",on:["G:1-1"],fa:"سال نو میلادی",en:"New Year's Day",ic:"🎆",theme:"numbers",words:["new year","calendar","clock","party","numbers"],say:["Happy New Year!","Let's count down: 5, 4, 3, 2, 1!"],act:"شمارش معکوس شاد: ۱۰ تا ۱ با هم بشمارید و آخرش همه بگویند Happy New Year!",craft:"کلاه جشن کاغذی.",mats:["مقوا","اکلیل یا برچسب"],q:"happy new year song for kids"},
+ {id:"motherlang",on:["G:2-21"],fa:"روز جهانی زبان مادری",en:"International Mother Language Day",ic:"🗣️",theme:"feelings",words:["hello","language","friend","world"],say:["How do you say 'hello'?","Hello! Salam! Bonjour!"],act:"«سلام» به زبان‌های مختلف: هر بچه «سلام» را به زبان خانه‌اش (فارسی، ترکی، کردی، عربی…) می‌گوید و بقیه تکرار می‌کنند.",craft:"دایره‌ی دوستی: دست‌های رنگی بچه‌ها دور یک کره‌ی زمین کاغذی.",mats:["تصویر کره‌ی زمین","رنگ انگشتی"],q:"hello song different languages for kids"},
+ {id:"happiness",on:["G:3-20"],fa:"روز جهانی شادی",en:"International Day of Happiness",ic:"😊",theme:"feelings",words:["happy","smile","laugh","fun"],say:["I'm happy!","Smile!"],act:"بازی «چه چیزی خوشحالت می‌کند؟»: I'm happy when…",craft:"صورتک خندان.",mats:["بشقاب کاغذی","مداد شمعی"],q:"if you're happy and you know it"},
+ {id:"water",on:["G:3-22"],fa:"روز جهانی آب",en:"World Water Day",ic:"💧",theme:"weather",words:["water","drink","rain","river","sea","save"],say:["Drink water!","Save water!"],act:"آزمایش غرق یا شناور و صحبت درباره‌ی صرفه‌جویی در آب: Turn off the tap!",craft:"قطره‌ی آب کاغذی.",mats:["ظرف آب","وسایل سبک و سنگین"],q:"water song for kids"},
+ {id:"bookday",on:["G:4-2","G:4-23"],fa:"روز جهانی کتاب کودک / روز جهانی کتاب",en:"Children's Book Day / World Book Day",ic:"📚",theme:"toys",words:["book","read","story","page","picture"],say:["Let's read a book!","This is my favorite book."],act:"هر بچه کتاب مورد علاقه‌اش را می‌آورد و با یک جمله معرفی می‌کند: This is my book. It's about…",craft:"کتابچه‌ی کوچک دست‌ساز.",mats:["کتاب‌های بچه‌ها","کاغذ تاشده"],q:"reading song for kids"},
+ {id:"autism",on:["G:4-2"],fa:"روز جهانی آگاهی از اوتیسم",en:"World Autism Awareness Day",ic:"🧩",theme:"feelings",words:["friend","different","kind","together"],say:["We are all different.","We are friends."],act:"بازی «همه با هم»: پازل گروهی که هر بچه یک تکه‌اش را دارد. پیام: همه متفاوتیم و همه با هم کامل می‌شویم.",craft:"پازل رنگی گروهی.",mats:["پازل مقوایی بزرگ"],q:"we are all different song for kids"},
+ {id:"earth",on:["G:4-22"],fa:"روز زمین",en:"Earth Day",ic:"🌍",theme:"weather",words:["earth","tree","water","recycle","clean","plant"],say:["Love the Earth!","Put it in the bin."],act:"بازی دسته‌بندی بازیافت: کاغذ و پلاستیک را در سطل‌های جدا بیندازند: Paper here! Plastic here!",craft:"کره‌ی زمین با کاغذ آبی و سبز.",mats:["دو سطل کوچک","کاغذ و پلاستیک تمیز"],q:"earth day song for kids"},
+ {id:"environment",on:["G:6-5"],fa:"روز جهانی محیط زیست",en:"World Environment Day",ic:"🌿",theme:"animals",words:["tree","animal","clean","plant","green"],say:["Plant a tree!","Keep it clean!"],act:"کاشتن دانه در لیوان و قول دادن برای مراقبت: I water my plant.",craft:"کاشتن لوبیا.",mats:["لیوان","خاک","دانه‌ی لوبیا"],q:"plant a seed song for kids"},
+ {id:"music",on:["G:6-21"],fa:"روز جهانی موسیقی",en:"World Music Day",ic:"🎵",theme:"toys",words:["music","drum","sing","dance","loud","quiet"],say:["Let's sing!","Play the drum!"],act:"ارکستر کلاس با سازهای دست‌ساز: Loud! Quiet! Fast! Slow!",craft:"ساختن ماراکاس با بطری و برنج.",mats:["بطری کوچک","برنج یا عدس"],q:"music instruments song for kids"},
+ {id:"friendship",on:["G:7-30"],fa:"روز جهانی دوستی",en:"International Friendship Day",ic:"🤝",theme:"feelings",words:["friend","share","help","play","together"],say:["You are my friend!","Let's play together!"],act:"بازی «دوستم را معرفی می‌کنم»: This is my friend. Her name is…",craft:"دستبند دوستی با نخ و مهره.",mats:["نخ","مهره‌ی درشت"],q:"friendship song for kids"},
+ {id:"dotday",on:["G:9-15"],fa:"روز جهانی نقطه (خلاقیت)",en:"International Dot Day",ic:"🔵",theme:"colors",words:["dot","circle","color","big","small","art"],say:["Make a dot!","What color is your dot?"],act:"هر بچه یک نقطه می‌کشد و به آن چیزی اضافه می‌کند تا به یک تصویر تبدیل شود. بعد درباره‌اش حرف می‌زند.",craft:"نقاشی با نقطه‌های رنگی.",mats:["کاغذ","ماژیک و مداد رنگی"],q:"the dot story read aloud"},
+ {id:"animalday",on:["G:10-4"],fa:"روز جهانی حیوانات",en:"World Animal Day",ic:"🐾",theme:"animals",words:["animal","pet","cat","dog","care","love"],say:["I love animals!","My favorite animal is…"],act:"هر بچه حیوان مورد علاقه‌اش را ادا می‌کند و بقیه حدس می‌زنند.",craft:"ماسک حیوان.",mats:["بشقاب کاغذی","کش"],q:"animal song for kids"},
+ {id:"teacherWorld",on:["G:10-5"],fa:"روز جهانی معلم",en:"World Teachers' Day",ic:"🍎",theme:"toys",words:["teacher","thank you","school","learn"],say:["Thank you, teacher!"],act:"بچه‌ها به نوبت معلم می‌شوند و یک کلمه را به کلاس یاد می‌دهند.",craft:"کارت تشکر.",mats:["مقوا","مداد رنگی"],q:"thank you teacher song for kids"},
+ {id:"smile",fa:"روز جهانی لبخند",en:"World Smile Day",ic:"😃",theme:"feelings",words:["smile","happy","face","laugh"],say:["Smile!","I'm happy!"],act:"بازی آینه و حالت‌های صورت: Show me a big smile!",craft:"صورتک لبخند.",mats:["آینه","بشقاب کاغذی"],q:"smile song for kids",rule:"firstFriOct"},
+ {id:"halloween",on:["G:10-31"],fa:"هالووین (آشنایی فرهنگی)",en:"Halloween (cultural)",ic:"🎃",theme:"colors",words:["pumpkin","orange","black","costume","bat","moon"],say:["It's a pumpkin!","What's your costume?"],act:"آشنایی با یک جشن کشورهای انگلیسی‌زبان، بدون ترس: رنگ‌ها و لباس‌های بامزه و بازی What's in the pumpkin?",craft:"کدوی کاغذی نارنجی با صورت خندان.",mats:["کاغذ نارنجی و مشکی"],q:"not scary halloween song for kids",note:"اختیاری است. فقط جنبه‌ی آشنایی با فرهنگ و بدون محتوای ترسناک."},
+ {id:"kindness",on:["G:11-13"],fa:"روز جهانی مهربانی",en:"World Kindness Day",ic:"💛",theme:"feelings",words:["kind","help","share","please","thank you"],say:["Can I help you?","Let's share!"],act:"درخت مهربانی: هر کار مهربانانه‌ای که بچه‌ها انجام می‌دهند یک برگ روی درخت می‌شود.",craft:"قلب‌های کاغذی مهربانی.",mats:["مقوای بزرگ درخت","برگ کاغذی"],q:"kindness song for kids"},
+ {id:"childWorld",on:["G:11-20"],fa:"روز جهانی کودک",en:"World Children's Day",ic:"🧸",theme:"toys",words:["child","play","happy","friend","world"],say:["Happy Children's Day!","Let's play!"],act:"روز بازی‌های انتخابی: بچه‌ها به رأی خودشان بازی‌های کلاس را انتخاب می‌کنند.",craft:"زنجیره‌ی دست‌های رنگی بچه‌ها دور کره‌ی زمین.",mats:["کاغذ رنگی","قیچی کودک"],q:"children of the world song for kids"},
+ {id:"hello",on:["G:11-21"],fa:"روز جهانی سلام",en:"World Hello Day",ic:"👋",theme:"feelings",words:["hello","hi","good morning","friend","wave"],say:["Hello! How are you?","Wave hello!"],act:"به هر کس در مدرسه یا مهد برخوردید، به انگلیسی سلام کنید و بشمارید چند نفر.",craft:"دست تکان‌دهنده‌ی کاغذی.",mats:["مقوا","چوب بستنی"],q:"hello song for kids"},
+ {id:"disability",on:["G:12-3"],fa:"روز جهانی افراد دارای معلولیت",en:"International Day of Persons with Disabilities",ic:"♿",theme:"body",words:["help","friend","different","together","kind"],say:["Can I help you?","We are friends."],act:"قصه‌ی دوستی بچه‌هایی با توانایی‌های مختلف و بازی‌های همه‌شمول.",craft:"دایره‌ی دوستی.",mats:["مقوا","رنگ"],q:"inclusion song for kids"},
+ {id:"christmas",on:["G:12-25"],fa:"کریسمس (آشنایی فرهنگی)",en:"Christmas (cultural)",ic:"🎄",theme:"winter",words:["tree","star","gift","snow","bell","winter"],say:["Merry Christmas!","Look at the star!"],act:"آشنایی با یک جشن کشورهای انگلیسی‌زبان: تزیین درخت کاغذی و شمردن ستاره‌ها.",craft:"درخت کاغذی با برچسب‌های رنگی.",mats:["مقوای سبز","برچسب"],q:"jingle bells song for kids",note:"اختیاری؛ فقط جنبه‌ی آشنایی فرهنگی."}
+];
+const OCC_BY_ID = Object.fromEntries(OCCASIONS.map(o=>[o.id,o]));
+
+function occasionsOn(d){
+ const j=J(d), h=H(d), out=[];
+ const keys=[`G:${d.getMonth()+1}-${d.getDate()}`]; if(j) keys.push(`J:${j.m}-${j.d}`); if(h) keys.push(`H:${h.m}-${h.d}`);
+ OCCASIONS.forEach(o=>{
+  if(o.on && o.on.some(k=>keys.includes(k))) out.push(o);
+  if(o.rule==="lastTueEsfand" && j && j.m===12 && d.getDay()===2){ const n=J(addDays(d,7)); if(n && n.m===1) out.push(o); }
+  if(o.rule==="firstFriOct" && d.getMonth()===9 && d.getDay()===5 && d.getDate()<=7) out.push(o);
+ });
+ return out;
+}
+function upcoming(from,days){ const res=[]; for(let i=0;i<days;i++){ const d=addDays(from,i); occasionsOn(d).forEach(o=>res.push({d,o})); } return res; }
+function relDay(d){ const n=Math.round((d-todayD())/86400000); return n===0?"امروز":n===1?"فردا":n===2?"پس‌فردا":n<0?`${faN(-n)} روز پیش`:`${faN(n)} روز دیگر`; }
+
+/* ---- اتصال مناسبت به طرح درس ---- */
+function occForClass(c){ if(!c.occ) return null; return OCC_BY_ID[c.occ]||null; }
+function applyOccasion(c,R){
+ const o=occForClass(c); if(!o) return R;
+ const ph={k:"occ",ic:"🎉",t:`فعالیت مناسبت: ${o.fa}`,mi:"میان‌فردی، دیداری",what:`${o.act} ${o.craft}`,words:o.words,say:o.say,videos:[{t:`آهنگ یا قصه‌ی مناسبت: ${o.en}`,u:yt(o.q)}],mats:o.mats,adapt:[]};
+ const ci=R.P.findIndex(p=>p.k==="create");
+ if(ci>=0){ ph.min=R.P[ci].min; R.P[ci]=ph; }
+ else { const g=R.P.find(p=>p.k==="game1"); const take=Math.min(5,Math.max(0,g.min-3)); g.min-=take; ph.min=take||3; const si=R.P.findIndex(p=>p.k==="story"); R.P.splice(si+1,0,ph); }
+ if(o.calm){ R.P=R.P.filter(p=>p.k!=="move"); R.P.forEach(p=>{ if(p.k==="song"){ p.t="🎵 آهنگ آرام وسط"; p.what="به احترام این روز، به‌جای آهنگ شاد و رقص یک آهنگ آرام یا قصه‌ی کوتاه پخش کنید."; } }); }
+ R.M.art = uniq([...(R.M.art||[]), ...o.mats]);
+ R.prep.push(`وسایل فعالیت مناسبت «${o.fa}» را آماده کنید: ${o.mats.join("، ")}`);
+ R.videos.push({t:`مناسبت ${o.fa}: ${o.en}`,u:yt(o.q)});
+ R.parent = R.parent.replace("یاد گرفتیم.",`یاد گرفتیم و به مناسبت «${o.fa}» یک فعالیت ویژه داشتیم ${o.ic}`);
+ R.occ=o; return R;
+}
+
+/* ---- بخش تاریخ کلاس در فرم ---- */
+function classDateBlock(c){
+ if(!c.date) c.date=iso(todayD());
+ const d=fromIso(c.date), t=todayD();
+ const near=[]; for(let i=-1;i<=6;i++){ const x=addDays(d,i); occasionsOn(x).forEach(o=>near.push({d:x,o})); }
+ const opt=(n,l)=>{ const v=iso(addDays(t,n)); return `<button class="chip ${c.date===v?"on":""}" data-date="${v}">${l}</button>`; };
+ return `<label>📅 تاریخ کلاس</label><div class="chips">${opt(0,"امروز")}${opt(1,"فردا")}${opt(2,"پس‌فردا")}</div>
+ <input type="date" id="clsDate" value="${esc(c.date||iso(t))}" style="max-width:220px">
+ <p style="font-size:14px;margin:6px 0">${esc(faDate(d))} · <span class="en">${esc(gDate(d))}</span>${hDate(d)?` · ${esc(hDate(d))}`:""}</p>
+ ${near.length?`<div class="ok" style="margin:6px 0"><b>🎉 مناسبت‌های نزدیک این تاریخ:</b> برای اضافه شدن به طرح درس، رویش بزنید.<div class="chips" style="margin:8px 0 0">${near.map(x=>`<button class="chip ${c.occ===x.o.id?"on":""}" data-occ="${x.o.id}">${x.o.ic} ${esc(x.o.fa)} · ${esc(faDate(x.d).split(" ").slice(1,3).join(" "))}</button>`).join("")}</div></div>`:`<p style="font-size:13px;color:var(--muted);margin:4px 0">مناسبت خاصی در روزهای نزدیک این تاریخ نیست.</p>`}`;
+}
+
+/* ---- صفحه‌ی تقویم ---- */
+let calSel=null, calYM=null;
+function monthStart(jy,jm){ let d=mkDate(jy+621,2,21); d=addDays(d,(jm-1)*30.5|0); for(let k=0;k<40;k++){ const j=J(d); if(j.y===jy&&j.m===jm&&j.d===1) return d; const diff=(j.y-jy)*365+(j.m-jm)*30+(j.d-1); d=addDays(d,-Math.sign(diff)*Math.max(1,Math.min(Math.abs(diff),20))); } return d; }
+function viewCalendar(){
+ if(!PF) return `<h2>📅 تقویم</h2><div class="warn">مرورگر این دستگاه تقویم شمسی را پشتیبانی نمی‌کند. لطفاً مرورگر را به‌روز کنید.</div>`;
+ const t=todayD(); if(!calYM){ const j=J(t); calYM=[j.y,j.m]; } if(!calSel) calSel=iso(t);
+ const [jy,jm]=calYM; const s=monthStart(jy,jm);
+ const days=[]; for(let i=0;i<31;i++){ const d=addDays(s,i); const j=J(d); if(j.m!==jm) break; days.push(d); }
+ const lead=(s.getDay()+1)%7; // شنبه = ستون اول
+ const e=days[days.length-1];
+ const cells=[...Array(lead).fill(null),...days].map(d=>{ if(!d) return `<div></div>`; const os=occasionsOn(d); const isT=iso(d)===iso(t), isS=iso(d)===calSel; const j=J(d);
+  return `<button class="calc ${isT?"today":""} ${isS?"sel":""} ${os.some(o=>o.calm)?"calm":os.length?"occ":""}" data-calday="${iso(d)}"><b>${faN(j.d)}</b><small>${d.getDate()}</small>${os.length?`<i>${os[0].ic}</i>`:""}</button>`; }).join("");
+ const sd=fromIso(calSel), sOcc=occasionsOn(sd);
+ const up=upcoming(t,60);
+ return `<h2>📅 تقویم و مناسبت‌ها</h2><p class="lead">تقویم شمسی، میلادی و قمری با مناسبت‌های ایرانی و جهانی. روی هر روز بزنید تا طرح درس همان روز با مناسبتش ساخته شود.</p>
+ <div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><button class="ghost" style="margin:0" id="calPrev">→</button><div style="text-align:center"><b style="font-size:18px">${FA_MONTHS[jm-1]} ${faN(jy)}</b><br><span class="en" style="font-size:13px">${G_MONTHS[s.getMonth()]}${s.getMonth()!==e.getMonth()?" – "+G_MONTHS[e.getMonth()]:""} ${e.getFullYear()}</span></div><button class="ghost" style="margin:0" id="calNext">←</button></div>
+ <div class="calg">${["ش","ی","د","س","چ","پ","ج"].map(x=>`<div class="calh">${x}</div>`).join("")}${cells}</div>
+ <p style="font-size:12px;color:var(--muted);margin:6px 0 0">عدد بزرگ: شمسی · عدد کوچک: میلادی · 🟩 مناسبت · 🟪 روز آرام</p></div>
+ <div class="card tint" style="--c:#3d8bfd"><h3 style="margin-top:0">${esc(faDate(sd))}</h3><p style="margin:0"><span class="en">${esc(gDate(sd))}</span>${hDate(sd)?` · ${esc(hDate(sd))}`:""}</p>
+ ${sOcc.length?sOcc.map(o=>occCard(o,sd)).join(""):`<p style="color:var(--muted)">مناسبت خاصی ثبت نشده.</p>`}
+ <button class="go" data-planfor="${calSel}" data-planocc="${sOcc[0]?sOcc[0].id:""}">✨ طرح درس برای این روز</button></div>
+ <h3>🗓️ مناسبت‌های ۶۰ روز آینده</h3>
+ ${up.length?up.map(x=>`<div class="act"><div class="t">${x.o.ic} ${esc(x.o.fa)} <span class="pill">${esc(relDay(x.d))}</span></div><p style="font-size:14px;margin:2px 0">${esc(faDate(x.d))} · <span class="en">${esc(gDate(x.d))}</span></p><button class="ghost" style="margin:4px 0" data-planfor="${iso(x.d)}" data-planocc="${x.o.id}">طرح درس این مناسبت</button></div>`).join(""):`<p>مناسبتی در ۶۰ روز آینده نیست.</p>`}
+ ${HF?`<p style="font-size:12px;color:var(--muted)">تاریخ مناسبت‌های قمری ممکن است با تقویم رسمی ایران یک روز فرق داشته باشد.</p>`:`<p class="warn">مناسبت‌های قمری روی این دستگاه نمایش داده نمی‌شوند.</p>`}`;
+}
+function occCard(o,d){ return `<div class="act"><div class="t">${o.ic} ${esc(o.fa)} · <span class="en">${esc(o.en)}</span></div>${o.note?`<p style="font-size:13px;color:#a06000">⚠️ ${esc(o.note)}</p>`:""}<p>${esc(o.act)}</p><p style="font-size:14px">🎨 ${esc(o.craft)}</p><div class="phr en">${esc(o.words.join(", "))}</div> ${o.say.map(x=>`<div class="phr en">${esc(x)}</div>`).join(" ")}<p>${linkA("🎵 آهنگ یا قصه‌ی مناسبت",yt(o.q))}</p></div>`; }
+
 /* ---------- wiring ---------- */
-RENDER.class = viewClass; RENDER.songs = viewSongs; RENDER.news = viewNews; RENDER.growth = viewGrowth;
+RENDER.class = viewClass; RENDER.songs = viewSongs; RENDER.news = viewNews; RENDER.growth = viewGrowth; RENDER.calendar = viewCalendar;
 const _home = RENDER.home;
-RENDER.home = ()=> `<a class="tile" href="#class" style="background:linear-gradient(135deg,#fff1e8,#eef4ff);margin-bottom:14px"><div class="ic">🧑‍🏫</div><b>کلاس من: طرح درس امروز</b><span>شرایط کلاس و بچه‌ها را انتخاب کنید تا تحلیل علمی، راهکار رفتاری و طرح درس کامل بگیرید.</span></a>` + _home().replace('<div class="grid">', `<div class="grid"><a class="tile" href="#growth"><div class="ic">🎓</div><b>رشد حرفه‌ای من</b><span>برنامه‌ی ۱۲ هفته‌ای، روزی ۳۰ دقیقه</span></a><a class="tile" href="#news"><div class="ic">🗞️</div><b>اخبار روز</b><span>تازه‌ترین مقاله‌های دنیا، هر روز</span></a><a class="tile" href="#songs"><div class="ic">🎵</div><b>آهنگ‌ها</b><span>آهنگ‌های کلاس با لینک</span></a>`);
+RENDER.home = ()=> (()=>{ const u=PF?upcoming(todayD(),14):[]; return u.length?`<div class="ok" style="margin-bottom:12px">📅 امروز: ${esc(faDate(todayD()))}<br><b>${u[0].o.ic} مناسبت پیش رو: ${esc(u[0].o.fa)} (${esc(relDay(u[0].d))})</b> <button class="ghost" style="margin:6px 0 0" data-planfor="${iso(u[0].d)}" data-planocc="${u[0].o.id}">طرح درس این مناسبت</button></div>`:(PF?`<div class="ok" style="margin-bottom:12px">📅 امروز: ${esc(faDate(todayD()))}</div>`:""); })() + `<a class="tile" href="#class" style="background:linear-gradient(135deg,#fff1e8,#eef4ff);margin-bottom:14px"><div class="ic">🧑‍🏫</div><b>کلاس من: طرح درس امروز</b><span>شرایط کلاس و بچه‌ها را انتخاب کنید تا تحلیل علمی، راهکار رفتاری و طرح درس کامل بگیرید.</span></a>` + _home().replace('<div class="grid">', `<div class="grid"><a class="tile" href="#calendar"><div class="ic">📅</div><b>تقویم و مناسبت‌ها</b><span>شمسی، میلادی، قمری + طرح درس مناسبتی</span></a><a class="tile" href="#growth"><div class="ic">🎓</div><b>رشد حرفه‌ای من</b><span>برنامه‌ی ۱۲ هفته‌ای، روزی ۳۰ دقیقه</span></a><a class="tile" href="#news"><div class="ic">🗞️</div><b>اخبار روز</b><span>تازه‌ترین مقاله‌های دنیا، هر روز</span></a><a class="tile" href="#songs"><div class="ic">🎵</div><b>آهنگ‌ها</b><span>آهنگ‌های کلاس با لینک</span></a>`);
 const vi = k=>VIEWS.findIndex(v=>v[0]===k);
-VIEWS.splice(vi("home")+1,0,["class","🧑‍🏫 کلاس من"],["growth","🎓 رشد من"]);
+VIEWS.splice(vi("home")+1,0,["class","🧑‍🏫 کلاس من"],["growth","🎓 رشد من"],["calendar","📅 تقویم"]);
 VIEWS.splice(vi("finland")+1,0,["songs","🎵 آهنگ‌ها"],["news","🗞️ اخبار روز"]);
 const ai = vi("articles"); if(ai>=0) VIEWS[ai][1]="📚 دانش و رشد";
 document.getElementById("navbar").innerHTML = VIEWS.map(([k,l])=>`<a href="#${k}" data-k="${k}">${l}</a>`).join("");
@@ -1387,7 +1520,12 @@ document.addEventListener("click", async e=>{
  const kd = e.target.closest("[data-kid]");
  if(kd){ const k=cur().kids[+kd.dataset.kid]; const v=kd.dataset.v; k.traits=k.traits||[]; k.traits=k.traits.includes(v)?k.traits.filter(x=>x!==v):[...k.traits,v]; kd.classList.toggle("on"); save(); refreshPlan(); return; }
  const kdel = e.target.closest("[data-kiddel]"); if(kdel){ cur().kids.splice(+kdel.dataset.kiddel,1); save(); rerender(true); return; }
+ const dt = e.target.closest("[data-date]"); if(dt){ const c=cur(); c.date=dt.dataset.date; c.occ=""; save(); rerender(true); return; }
+ const oc = e.target.closest("[data-occ]"); if(oc){ const c=cur(); c.occ = c.occ===oc.dataset.occ ? "" : oc.dataset.occ; if(c.occ && OCC_BY_ID[c.occ] && THEMES[OCC_BY_ID[c.occ].theme] && c.theme!==OCC_BY_ID[c.occ].theme){ c.theme=OCC_BY_ID[c.occ].theme; save(); rerender(true); return; } oc.parentElement.querySelectorAll("[data-occ]").forEach(x=>x.classList.toggle("on", x.dataset.occ===c.occ)); save(); refreshPlan(); return; }
+ const cd = e.target.closest("[data-calday]"); if(cd){ calSel=cd.dataset.calday; rerender(true); return; }
+ const pf = e.target.closest("[data-planfor]"); if(pf){ const c=cur(); c.date=pf.dataset.planfor; c.occ=pf.dataset.planocc||""; if(c.occ && OCC_BY_ID[c.occ] && THEMES[OCC_BY_ID[c.occ].theme]) c.theme=OCC_BY_ID[c.occ].theme; showPlan=true; save(); if(location.hash==="#class") rerender(); else location.hash="#class"; setTimeout(()=>{const o=document.getElementById("planOut"); if(o) o.scrollIntoView({behavior:"smooth",block:"start"});},250); return; }
  const id = e.target.id;
+ if(id==="calPrev"||id==="calNext"){ let [y,m]=calYM; m+= id==="calNext"?1:-1; if(m>12){m=1;y++;} if(m<1){m=12;y--;} calYM=[y,m]; rerender(true); return; }
  if(id==="kidAdd"){ cur().kids.push({name:"",traits:[]}); save(); rerender(true); return; }
  if(id==="clsNew"){ ST.classes.push(Object.assign(newClass(),{name:"کلاس "+(ST.classes.length+1)})); ST.active=ST.classes.length-1; showPlan=false; save(); rerender(); return; }
  if(id==="clsDel"){ ST.classes.splice(ST.active,1); ST.active=0; showPlan=false; save(); rerender(); return; }
@@ -1403,6 +1541,7 @@ document.addEventListener("click", async e=>{
   e.target.disabled=false; return; }
 });
 document.addEventListener("change", e=>{
+ if(e.target.id==="clsDate"){ const c=cur(); if(e.target.value){ c.date=e.target.value; c.occ=""; save(); rerender(true); } return; }
  const d=e.target.dataset||{};
  if(d.chk){ let st={}; try{ st=JSON.parse(localStorage.getItem("chk_"+d.chk)||"{}"); }catch(x){} st[d.i]=e.target.checked; try{ localStorage.setItem("chk_"+d.chk,JSON.stringify(st)); }catch(x){} return; }
  if(d.pdday!==undefined){ const s=pdState(); const k=todayKey(); s.days[k]=s.days[k]||{}; s.days[k][d.pdday]=e.target.checked; pdSave(s); return; }
