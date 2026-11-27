@@ -22,7 +22,7 @@
   --r:18px;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
+
 body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,system-ui,sans-serif;line-height:1.85;font-size:16px}
 .en{font-family:Nunito,system-ui,sans-serif;direction:ltr;unicode-bidi:isolate;font-weight:700;color:#3a5fb0}
 header.top{background:linear-gradient(135deg,#ffd9c7,#ffe9b8 55%,#d6ecff);padding:calc(22px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) 18px calc(18px + env(safe-area-inset-left))}
@@ -94,7 +94,7 @@ details[open] summary::after{content:"－"}
 details>div{padding-bottom:14px}
 .pill{display:inline-block;font-size:12px;border-radius:999px;padding:1px 9px;background:#f1ece4;color:#5b524a;margin-left:4px}
 .out,.act,.card,a.src,.fabox,.enbox{overflow-wrap:anywhere;word-break:break-word}
-html,body{overflow-x:hidden}
+main{overflow-x:clip}
 footer{color:var(--muted);font-size:13px;text-align:center;padding:20px}
 </style>
 </head>
@@ -1375,22 +1375,24 @@ VIEWS.splice(vi("finland")+1,0,["songs","🎵 آهنگ‌ها"],["news","🗞️
 const ai = vi("articles"); if(ai>=0) VIEWS[ai][1]="📚 دانش و رشد";
 document.getElementById("navbar").innerHTML = VIEWS.map(([k,l])=>`<a href="#${k}" data-k="${k}">${l}</a>`).join("");
 
-function rerender(keepScroll){ const y=window.scrollY; route(); if(keepScroll) window.scrollTo(0,y); }
+function rerender(keepScroll){ const y=window.scrollY||document.documentElement.scrollTop||0; route(); if(keepScroll){ window.scrollTo({top:y,left:0,behavior:"instant"}); requestAnimationFrame(()=>window.scrollTo({top:y,left:0,behavior:"instant"})); } }
+function refreshPlan(){ if(!showPlan) return; const o=document.getElementById("planOut"); if(o) o.innerHTML=planHTML(cur()); }
 document.addEventListener("click", async e=>{
  const tp = e.target.closest("[data-topic]"); if(tp){ newsTopic=tp.dataset.topic; rerender(true); return; }
  const f = e.target.closest("[data-f]");
  if(f){ const c=cur(), k=f.dataset.f, v=f.dataset.v;
-  if(f.dataset.m){ c[k]=c[k]||[]; c[k]=c[k].includes(v)?c[k].filter(x=>x!==v):[...c[k],v]; } else c[k]=v;
-  save(); rerender(true); return; }
+  if(f.dataset.m){ c[k]=c[k]||[]; c[k]=c[k].includes(v)?c[k].filter(x=>x!==v):[...c[k],v]; f.classList.toggle("on"); }
+  else { c[k]=v; f.parentElement.querySelectorAll("[data-f]").forEach(x=>x.classList.toggle("on", x===f)); }
+  save(); refreshPlan(); return; }
  const kd = e.target.closest("[data-kid]");
- if(kd){ const k=cur().kids[+kd.dataset.kid]; const v=kd.dataset.v; k.traits=k.traits||[]; k.traits=k.traits.includes(v)?k.traits.filter(x=>x!==v):[...k.traits,v]; save(); rerender(true); return; }
+ if(kd){ const k=cur().kids[+kd.dataset.kid]; const v=kd.dataset.v; k.traits=k.traits||[]; k.traits=k.traits.includes(v)?k.traits.filter(x=>x!==v):[...k.traits,v]; kd.classList.toggle("on"); save(); refreshPlan(); return; }
  const kdel = e.target.closest("[data-kiddel]"); if(kdel){ cur().kids.splice(+kdel.dataset.kiddel,1); save(); rerender(true); return; }
  const id = e.target.id;
  if(id==="kidAdd"){ cur().kids.push({name:"",traits:[]}); save(); rerender(true); return; }
  if(id==="clsNew"){ ST.classes.push(Object.assign(newClass(),{name:"کلاس "+(ST.classes.length+1)})); ST.active=ST.classes.length-1; showPlan=false; save(); rerender(); return; }
  if(id==="clsDel"){ ST.classes.splice(ST.active,1); ST.active=0; showPlan=false; save(); rerender(); return; }
- if(id==="planBtn"){ showPlan=true; rerender(true); setTimeout(()=>{const o=document.getElementById("planOut"); if(o) o.scrollIntoView({behavior:"smooth"});},60); return; }
- if(id==="planAgain"){ cur().seed=(cur().seed||1)+1; save(); rerender(true); return; }
+ if(id==="planBtn"){ showPlan=true; refreshPlan(); setTimeout(()=>{const o=document.getElementById("planOut"); if(o) o.scrollIntoView({behavior:"smooth",block:"start"});},60); return; }
+ if(id==="planAgain"){ cur().seed=(cur().seed||1)+1; save(); refreshPlan(); const o=document.getElementById("planOut"); if(o) o.scrollIntoView({behavior:"smooth",block:"start"}); return; }
  if(id==="copyParent"){ try{ await navigator.clipboard.writeText(document.getElementById("parentMsg").textContent); e.target.textContent="کپی شد ✓"; }catch(err){ e.target.textContent="کپی نشد"; } return; }
  if(id==="pdPrev"||id==="pdNext"){ const s=pdState(); s.week=Math.max(0,Math.min(11,s.week+(id==="pdNext"?1:-1))); pdSave(s); rerender(); return; }
  if(id==="planCopy"){ try{ await navigator.clipboard.writeText(planText(cur())); e.target.textContent="کپی شد ✓"; }catch(err){ e.target.textContent="کپی نشد"; } return; }
