@@ -1221,6 +1221,7 @@ function planHTML(c){
  <div class="card tint" style="--c:#d65db1"><h3 style="margin-top:0">💛 نکات روانشناختی</h3><ul class="clean">${A.psych.map(x=>`<li>${x}</li>`).join("")}</ul></div>
  ${kids.length?`<div class="card tint" style="--c:#2fb380"><h3 style="margin-top:0">👧 راهکار برای هر کودک</h3>${kids.map(k=>{const ts=(k.traits||[]).filter(x=>TRAITS[x]);return `<div class="act"><div class="t">${esc(k.name||"کودک")} ${ts.map(x=>`<span class="pill">${TRAITS[x].ic} ${esc(TRAITS[x].fa)}</span>`).join("")}</div>${ts.length?`<ul class="clean do">${uniq(ts.flatMap(x=>[...(TRAITS[x].adapt||[]),...(TRAITS[x].behave||[]).slice(0,2)])).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:`<p>ویژگی‌ای انتخاب نشده.</p>`}</div>`}).join("")}</div>`:""}
 
+ ${(()=>{ const g=ptForTraits(tr); return g.length?`<div class="card tint" style="--c:#7a6ff0"><h3 style="margin-top:0">🧸 بازی‌های درمانی پیشنهادی برای بچه‌های این کلاس</h3>${g.map(x=>`<div class="act"><div class="t">${esc(x.t)} <span class="pill">${esc(x.time)}</span></div><p style="font-size:14px">${esc(x.steps[0])}</p></div>`).join("")}<a class="src" href="#play">جزئیات کامل در بخش بازی‌درمانی ←</a></div>`:""; })()}
  <div class="card tint" style="--c:#ffb020"><h3 style="margin-top:0">📩 پیام آماده برای والدین (بعد از کلاس)</h3><div class="out" id="parentMsg">${esc(R.parent)}</div><button class="ghost" id="copyParent">📋 کپی پیام</button></div>
  <div class="card"><h3 style="margin-top:0">📝 یادداشت بعد از کلاس</h3><p style="font-size:14px;color:var(--muted);margin:0">چه چیزی خوب پیش رفت؟ کدام بچه به توجه بیشتری نیاز داشت؟ جلسه‌ی بعد چه چیزی را تغییر می‌دهم؟</p><textarea data-note="${ST.active}" placeholder="یادداشت شما روی همین گوشی ذخیره می‌شود…">${esc((cur().notes||""))}</textarea></div>
 
@@ -1498,13 +1499,326 @@ function viewCalendar(){
 }
 function occCard(o,d){ return `<div class="act"><div class="t">${o.ic} ${esc(o.fa)} · <span class="en">${esc(o.en)}</span></div>${o.note?`<p style="font-size:13px;color:#a06000">⚠️ ${esc(o.note)}</p>`:""}<p>${esc(o.act)}</p><p style="font-size:14px">🎨 ${esc(o.craft)}</p><div class="phr en">${esc(o.words.join(", "))}</div> ${o.say.map(x=>`<div class="phr en">${esc(x)}</div>`).join(" ")}<p>${linkA("🎵 آهنگ یا قصه‌ی مناسبت",yt(o.q))}</p></div>`; }
 
+/* ===================== بازی‌درمانی ===================== */
+const PT_GOALS = {reg:"🧘 خودتنظیمی و تمرکز",emo:"💛 بیان احساسات",soc:"🤝 مهارت اجتماعی",brave:"🦁 اعتمادبه‌نفس و کاهش اضطراب",bond:"🫶 رابطه و دلبستگی",sens:"✋ تنظیم حسی",lang:"🗣️ ارتباط و زبان",anger:"🌋 مدیریت خشم"};
+const PT_NEEDS = {all:"همه‌ی بچه‌ها",adhd:"ADHD",impulse:"کنترل تکانه",autism:"اوتیسم",ld:"اختلال یادگیری",dd:"تأخیر رشدی",speech:"تأخیر گفتار",sensory:"پردازش حسی",anxiety:"اضطراب و سکوت انتخابی",down:"سندرم داون",aggressive:"پرخاشگری",shy:"خجالتی",separation:"اضطراب جدایی"};
+const PT_GAMES = [
+ {k:"special",t:"زمان بازی ویژه (بازی کودک‌محور)",g:["bond","emo","brave"],n:["all","anxiety","shy","aggressive","separation","autism"],fmt:"فردی",age:"۳–۷",time:"۲۰ تا ۳۰ دقیقه",base:"بازی‌درمانی کودک‌محور (CCPT) و آموزش رابطه‌ی معلم و کودک (CTRT)",
+  mats:["جعبه‌ی اسباب‌بازی کامل (بخش جعبه‌ابزار)","تایمر","جای آرام و ثابت"],
+  steps:["شروع: «این زمان بازی ویژه‌ی ماست. اینجا می‌تونی با اسباب‌بازی‌ها تقریباً هر کاری که دوست داری بکنی.»","کودک رهبری می‌کند. شما کنارش، هم‌قد او بنشینید و فقط دنبالش بروید.","کارهایش را بلند توصیف کنید (ردیابی): «داری ماشین‌ها رو ردیف می‌کنی.»","احساسش را منعکس کنید: «از اینکه برج بلند شد خیلی خوشحالی!»","سؤال نپرسید، آموزش ندهید، پیشنهاد ندهید و قضاوت نکنید.","اگر لازم شد مرز بگذارید (روش ACT در بخش مهارت‌ها).","۵ دقیقه مانده هشدار بدهید: «پنج دقیقه دیگه وقت بازی ویژه تموم می‌شه.» و با یک جمله‌ی ثابت تمام کنید."],
+  say:["You're building something.","You look happy!","You decided to…","Our special playtime is over for today."],
+  watch:"موضوعات تکراری بازی (قدرت، مراقبت، ترس، نظم)، احساس غالب و نحوه‌ی تمام کردن بازی.",
+  caution:"هدف رابطه است، نه آموزش. در این زمان انگلیسی را اجبار نکنید؛ اگر کودک خواست، با او همراه شوید."},
+ {k:"bubble",t:"نفس حبابی",g:["reg","anger","brave"],n:["all","adhd","impulse","anxiety","aggressive","sensory"],fmt:"فردی یا گروهی",age:"۳–۷",time:"۵ دقیقه",base:"تنظیم هیجان با تنفس عمیق بازی‌گونه",
+  mats:["حباب‌ساز"],steps:["آرام و عمیق نفس بکشید و یک حباب خیلی بزرگ بسازید.","نشان دهید فوت تند حباب را می‌ترکاند و فوت آرام حباب بزرگ می‌سازد.","بچه‌ها با نفس آرام حباب بزرگ بسازند.","بعد از ساختن حباب‌ها، همه با هم بشمارید و آن‌ها را بترکانید.","در لحظه‌های عصبانیت یا اضطراب بگویید: «بیا یه نفس حبابی بکشیم.»"],
+  say:["Breathe in… slowly blow!","A big, big bubble!","Pop, pop, pop!"],watch:"آیا کودک می‌تواند سرعت نفسش را کنترل کند؟",caution:"برای کودکی که نفس‌تنگی دارد زیاده‌روی نکنید."},
+ {k:"feather",t:"پر معلق",g:["reg","soc"],n:["adhd","impulse","all"],fmt:"دونفره یا گروهی",age:"۴–۷",time:"۵ دقیقه",base:"تمرکز، کنترل تنفس و همکاری",
+  mats:["پر سبک یا دستمال کاغذی"],steps:["پر را بالا بیندازید.","بچه‌ها فقط با فوت کردن نگذارند پر به زمین بیفتد.","بشمارید چند ثانیه در هوا ماند.","نسخه‌ی گروهی: پر را با فوت به هم پاس بدهند."],
+  say:["Blow! Keep it up!","One, two, three…"],watch:"تحمل ناکامی وقتی پر می‌افتد.",caution:""},
+ {k:"statue",t:"مجسمه‌ی احساس",g:["reg","emo"],n:["adhd","impulse","autism","all"],fmt:"گروهی",age:"۴–۷",time:"۱۰ دقیقه",base:"مهار تکانه و شناخت احساس از روی بدن",
+  mats:["آهنگ","کارت صورتک احساسات"],steps:["آهنگ پخش کنید تا بچه‌ها برقصند.","آهنگ را قطع کنید و یک کارت احساس نشان دهید.","بچه‌ها با بدنشان مجسمه‌ی آن احساس می‌شوند.","بپرسید: «کِی این‌جوری می‌شی؟»"],
+  say:["Freeze like a happy statue!","Show me angry… now calm."],watch:"کدام احساس را نمی‌تواند نشان دهد یا از آن پرهیز می‌کند؟",caution:""},
+ {k:"turtle",t:"مسابقه‌ی لاک‌پشت",g:["reg","anger"],n:["adhd","impulse","aggressive"],fmt:"گروهی",age:"۴–۷",time:"۵ دقیقه",base:"مهار تکانه؛ برنده آهسته‌ترین است",
+  mats:["خط شروع و پایان"],steps:["همه پشت خط شروع بایستند.","هدف: آهسته‌ترین کسی که به خط پایان می‌رسد برنده است، بدون ایستادن.","اگر کسی ایستاد، از اول شروع می‌کند.","بعد تکنیک لاک‌پشت را یاد بدهید: Stop, breathe, think."],
+  say:["Slow like a turtle…","Stop, breathe, think."],watch:"آیا کودک می‌تواند بدنش را آهسته کنترل کند؟",caution:""},
+ {k:"feelbox",t:"جعبه‌ی احساسات با عروسک",g:["emo","lang"],n:["all","autism","speech","shy","anxiety"],fmt:"فردی یا گروه کوچک",age:"۳–۷",time:"۱۰ دقیقه",base:"بیان احساس به‌طور غیرمستقیم و امن از طریق عروسک",
+  mats:["جعبه","کارت‌های صورتک احساسات","عروسک دستی"],steps:["عروسک یک کارت از جعبه درمی‌آورد و ادای احساسش را درمی‌آورد.","بچه‌ها حدس می‌زنند: Is he sad?","عروسک می‌گوید چرا این حس را دارد.","بعد از بچه‌ها بپرسید: «تو هم کِی این‌جوری می‌شی؟» (اختیاری، بدون اجبار)"],
+  say:["How does Teddy feel?","He's sad because…","It's OK to feel sad."],watch:"کدام احساس‌ها برای کودک آشنا یا ناآشناست؟",caution:"اگر کودک چیز نگران‌کننده‌ای گفت، آرام بشنوید و بعد با والدین یا مشاور مطرح کنید."},
+ {k:"bodymap",t:"نقشه‌ی احساس در بدن",g:["emo","sens"],n:["all","anxiety","autism","sensory"],fmt:"فردی یا گروهی",age:"۵–۷",time:"۱۵ دقیقه",base:"آگاهی بدنی از هیجان",
+  mats:["برگه‌ی طرح بدن","مداد رنگی"],steps:["برای هر احساس یک رنگ انتخاب کنید (مثلاً قرمز برای عصبانی).","بپرسید: «وقتی عصبانی هستی، کجای بدنت حسش می‌کنی؟»","کودک آنجا را رنگ می‌کند.","درباره‌ی نقاشی گفتگو کنید، بدون تفسیر."],
+  say:["Where do you feel angry?","In my tummy!"],watch:"محل احساس‌ها و شدتشان.",caution:"نقاشی را تفسیر نکنید و برچسب نزنید."},
+ {k:"puppetshow",t:"نمایش عروسکی کودک‌گردان",g:["emo","lang","brave"],n:["all","shy","anxiety","speech","aggressive"],fmt:"فردی یا گروه کوچک",age:"۴–۷",time:"۱۵ دقیقه",base:"روایت و فرافکنی امن از طریق عروسک",
+  mats:["۴ تا ۶ عروسک (خانواده، حیوان مهربان، حیوان ترسناک)","پارچه یا جعبه به‌عنوان صحنه"],steps:["کودک عروسک‌ها را انتخاب می‌کند و قصه را خودش می‌سازد.","شما تماشاگر یا بازیگر کمکی هستید. فقط همان کاری را بکنید که کودک می‌گوید.","توصیف و انعکاس احساس: «شیره خیلی عصبانیه!»","قصه را تفسیر یا اصلاح نکنید."],
+  say:["What happens next?","The lion is very angry!","You decide."],watch:"شخصیت‌های تکراری و نحوه‌ی حل مشکل در قصه.",caution:""},
+ {k:"jars",t:"شیشه‌ی احساس‌ها",g:["emo","reg"],n:["all","autism","ld"],fmt:"فردی یا گروهی",age:"۴–۷",time:"۱۰ دقیقه",base:"دیداری کردن احساسات روزانه",
+  mats:["چند ظرف شفاف با برچسب احساس","مهره یا پمپون رنگی"],steps:["هر ظرف برای یک احساس است: happy, sad, angry, scared.","کودک برای احساس امروزش مهره در ظرف می‌اندازد. می‌تواند در چند ظرف بیندازد.","گفتگو: «امروز بیشتر کدوم بود؟»"],
+  say:["Today I feel…","A little happy and a little tired."],watch:"تغییر احساس‌ها در طول هفته‌ها.",caution:""},
+ {k:"tower",t:"برج دونفره",g:["soc","reg"],n:["all","autism","adhd","aggressive"],fmt:"دونفره",age:"۴–۷",time:"۱۰ دقیقه",base:"همکاری، نوبت‌گیری و تحمل ناکامی",
+  mats:["مکعب یا لیوان کاغذی"],steps:["دو بچه به نوبت یک مکعب روی برج می‌گذارند.","قبل از هر حرکت بگویند: My turn / Your turn.","اگر برج ریخت، با هم بگویند: Oops! Let's try again!","بشمارید برج چند طبقه شد."],
+  say:["My turn! Your turn!","Oops! Let's try again!"],watch:"واکنش به ریختن برج و صبر برای نوبت.",caution:""},
+ {k:"mirror",t:"بازی آینه",g:["bond","soc","reg"],n:["all","autism","adhd","shy"],fmt:"دونفره",age:"۳–۷",time:"۵ دقیقه",base:"هماهنگی و توجه مشترک (الهام از Theraplay)",
+  mats:["هیچ"],steps:["روبه‌روی کودک بنشینید.","آرام دست یا صورتتان را حرکت دهید و کودک آینه‌ی شما شود.","بعد جایتان را عوض کنید: شما آینه‌ی کودک می‌شوید.","حرکات را آهسته نگه دارید."],
+  say:["I'm your mirror!","Slowly… slowly…"],watch:"تماس چشمی خودبه‌خودی و لذت از هماهنگی.",caution:"برای کودک اوتیسم تماس چشمی را اجبار نکنید."},
+ {k:"squeeze",t:"پیام دست",g:["bond","soc","reg"],n:["all","shy","separation"],fmt:"گروهی",age:"۴–۷",time:"۵ دقیقه",base:"ارتباط و آرامش گروهی",
+  mats:["هیچ"],steps:["دایره بنشینید و دست هم را بگیرید (هر کس راحت نیست، می‌تواند بیرون دایره بماند).","معلم دست نفر کناری را آرام فشار می‌دهد و این «پیام» دور دایره می‌چرخد.","وقتی پیام برگشت، همه بگویند: It's back!","سخت‌ترش کنید: دو فشار یا پیام برعکس."],
+  say:["Pass the squeeze!","It's back!"],watch:"آیا کودک در تماس فیزیکی راحت است؟",caution:"هیچ کودکی را مجبور به گرفتن دست نکنید."},
+ {k:"worry",t:"هیولای نگرانی‌خور",g:["brave","emo"],n:["anxiety","shy","separation","all"],fmt:"فردی یا گروهی",age:"۴–۷",time:"۱۰ دقیقه",base:"بیرونی‌سازی نگرانی",
+  mats:["جعبه‌ی کفش با دهان بزرگ (هیولای مهربان)","کاغذ و مداد رنگی"],steps:["هیولای مهربان را معرفی کنید: «این هیولا نگرانی‌ها رو می‌خوره!»","کودک نگرانی‌اش را می‌کشد یا می‌گوید (شما برایش بنویسید).","کاغذ را به هیولا «غذا» بدهد.","بعد از کلاس، بدون اینکه کودک ببیند، نگرانی‌ها را بخوانید تا موارد مهم را بشناسید."],
+  say:["Feed the worry monster!","Yum, yum!","You're brave."],watch:"نگرانی‌های تکراری.",caution:"اگر نگرانی جدی یا نشانه‌ی آسیب دیدید، با والدین یا مشاور در میان بگذارید."},
+ {k:"safe",t:"جای امن من",g:["brave","reg"],n:["anxiety","separation","sensory","all"],fmt:"فردی یا گروهی",age:"۵–۷",time:"۱۰ دقیقه",base:"تصویرسازی آرامش",
+  mats:["کاغذ","مداد رنگی","موسیقی آرام"],steps:["با موسیقی آرام، چشم‌ها را ببندند (اختیاری).","بگویید جایی را تصور کنند که در آن احساس آرامش و امنیت دارند.","آن جا را بکشند و درباره‌اش بگویند.","وقتی ناآرام شدند، یادشان بیندازید: «بیا به جای امنت فکر کنیم.»"],
+  say:["Where is your safe place?","I feel safe at…"],watch:"",caution:""},
+ {k:"measure",t:"چقدر بزرگ شدی؟",g:["bond"],n:["all","separation","dd","down","shy"],fmt:"فردی",age:"۳–۶",time:"۵ دقیقه",base:"توجه و مراقبت (الهام از Theraplay: Nurture)",
+  mats:["کاموا یا نوار رنگی"],steps:["با اجازه‌ی کودک، قدش را با کاموا اندازه بگیرید.","دست‌ها و پاهایش را هم اندازه بگیرید و با ذوق بگویید.","کاموا را به او بدهید تا به خانه ببرد."],
+  say:["How tall are you?","Wow! You're so big!"],watch:"لذت کودک از دیده شدن.",caution:"قبلش اجازه بگیرید: Can I measure you?"},
+ {k:"cotton",t:"هاکی پنبه‌ای",g:["bond","reg","soc"],n:["all","adhd","dd","speech"],fmt:"دونفره",age:"۳–۷",time:"۵ دقیقه",base:"درگیری شاد و کنترل نفس (الهام از Theraplay: Engagement)",
+  mats:["چند گلوله‌ی پنبه","میز"],steps:["دو طرف میز روبه‌روی هم بنشینید.","با فوت کردن، گلوله‌ی پنبه را به طرف مقابل برسانید.","هر بار گل شد، با هم بخندید و امتیاز را بشمارید."],
+  say:["Blow! Goal!","One point!"],watch:"",caution:""},
+ {k:"sand",t:"بازی آزاد با شن",g:["sens","emo","reg"],n:["sensory","autism","anxiety","all"],fmt:"فردی",age:"۳–۷",time:"۱۵ دقیقه",base:"بازی حسی کودک‌محور",
+  mats:["سینی شن تمیز","مینیاتورها (حیوانات، آدم‌ها، خانه، درخت)"],steps:["کودک آزادانه با شن و مینیاتورها بازی می‌کند.","شما فقط توصیف کنید: «حیوون‌ها رو گذاشتی کنار هم.»","اگر کودک خواست، از «دنیایی که ساخته» بپرسید: Tell me about it.","تفسیر نکنید. در پایان از ساخته‌ی کودک عکس بگیرید."],
+  say:["Tell me about it.","You put the lion here."],watch:"",caution:"تفسیر بازی شن کار درمانگر متخصص است. معلم فقط همراهی و توصیف می‌کند."},
+ {k:"pillow",t:"ساندویچ کوسنی",g:["sens","reg","bond"],n:["sensory","autism","adhd"],fmt:"فردی",age:"۳–۶",time:"۵ دقیقه",base:"فشار عمیق آرام‌کننده",
+  mats:["دو کوسن بزرگ نرم"],steps:["کودک روی یک کوسن دراز می‌کشد (سرش بیرون).","کوسن دوم را رویش بگذارید و آرام فشار دهید: «تو یه ساندویچ پنیری!»","فشار را به اندازه‌ای که کودک دوست دارد تنظیم کنید."],
+  say:["You're a sandwich!","More or less?"],watch:"",caution:"فقط با رضایت کودک. هرگز روی سر یا صورت فشار ندهید. اگر کودک گفت بس است، فوراً متوقف شوید."},
+ {k:"dough",t:"خمیر احساس",g:["anger","sens","emo"],n:["aggressive","impulse","sensory","all"],fmt:"فردی یا گروهی",age:"۳–۷",time:"۱۰ دقیقه",base:"تخلیه‌ی هیجان به شکل امن",
+  mats:["خمیر بازی"],steps:["بگویید: «خمیر رو مثل وقتی که عصبانی هستی فشار بده!»","بعد مثل وقتی که آرامی، نرم و آهسته ورز بده.","یک صورتک احساس با خمیر بسازند و درباره‌اش بگویند."],
+  say:["Squeeze! Squeeze hard!","Now soft and slow."],watch:"",caution:""},
+ {k:"phone",t:"تلفن اسباب‌بازی",g:["lang","brave"],n:["speech","shy","anxiety","autism"],fmt:"فردی",age:"۳–۶",time:"۵ دقیقه",base:"ارتباط کم‌فشار با فاصله‌ی امن",
+  mats:["دو تلفن اسباب‌بازی"],steps:["شما زنگ می‌زنید: «Ring ring! Hello!»","کودک می‌تواند جواب بدهد، صدا دربیاورد یا فقط گوش کند.","گفتگوی کوتاه و ساده: «How are you?»","کودکی که سکوت انتخابی دارد، اول فقط گوش کند. بعداً زمزمه کند."],
+  say:["Ring ring! Hello!","Who is it?","Bye bye!"],watch:"",caution:""},
+ {k:"stem",t:"قصه‌ی نیمه‌کاره",g:["emo","lang","brave"],n:["all","anxiety","aggressive"],fmt:"فردی یا گروه کوچک",age:"۵–۷",time:"۱۰ دقیقه",base:"حل مسئله و بیان از طریق قصه",
+  mats:["عروسک یا تصویر"],steps:["قصه را شروع کنید و در لحظه‌ی مشکل متوقف شوید: «خرگوش کوچولو توی جنگل گم شد…»","بپرسید: «بعدش چی شد؟»","کودک قصه را تمام می‌کند. شما فقط توصیف و انعکاس احساس کنید."],
+  say:["What happens next?","How does the bunny feel?"],watch:"راه‌حل‌هایی که کودک پیدا می‌کند.",caution:""},
+ {k:"floortime",t:"دنبال کردن علاقه‌ی کودک (فلورتایم)",g:["bond","lang","soc"],n:["autism","dd","speech","down"],fmt:"فردی",age:"۳–۷",time:"۱۵ تا ۲۰ دقیقه",base:"رویکرد DIR / Floortime",
+  mats:["اسباب‌بازی‌های مورد علاقه‌ی کودک"],steps:["روی زمین، هم‌قد کودک بنشینید.","ببینید کودک به چه چیزی علاقه دارد و وارد همان بازی شوید (مثلاً اگر ماشین را می‌چرخاند، شما هم ماشین بچرخانید).","کمی بازی را بامزه تغییر دهید تا کودک واکنش نشان دهد (مثلاً ماشینتان جلوی ماشین او بایستد).","هر واکنش کودک (نگاه، صدا، حرکت) را یک «حلقه‌ی ارتباطی» حساب کنید و ادامه دهید."],
+  say:["Beep beep! My car is coming!","Oh no! Stop!"],watch:"تعداد رفت‌وبرگشت‌های ارتباطی پشت سر هم.",caution:"بازی را به سمت آموزش نکشید. هدف ارتباط است."}
+];
+const PT_TOOLBOX = [
+ ["🏠 اسباب‌بازی‌های زندگی واقعی و مراقبت",["خانواده‌ی عروسکی (پدر، مادر، بچه، نوزاد)","خانه‌ی عروسکی یا جعبه به‌عنوان خانه","ظرف‌های آشپزی اسباب‌بازی","کیف دکتر اسباب‌بازی","ماشین و آمبولانس","تلفن اسباب‌بازی (دو تا)","پتو و شیشه‌شیر عروسک"]],
+ ["🦁 اسباب‌بازی‌های تخلیه‌ی هیجان",["حیوانات وحشی (شیر، کروکودیل، دایناسور)","حیوانات اهلی","عروسک‌های دستی (مهربان و ترسناک)","توپ نرم","کوسن بزرگ"]],
+ ["🎨 ابزار بیان خلاق",["خمیر بازی","مداد شمعی و رنگ","کاغذ بزرگ","سینی شن و مینیاتورها","مکعب و لگو","ساز ساده (دف، زنگوله)","کارت صورتک احساسات"]],
+ ["🧘 ابزار آرام‌سازی و حسی",["حباب‌ساز","پر سبک","توپ فشاری","تایمر دیداری (شنی)","پتوی نرم یا کوسن","گوشه یا چادر آرام"]],
+ ["📋 ابزار معلم",["تایمر","دفترچه‌ی یادداشت مشاهده","دوربین برای عکس از ساخته‌ها (با اجازه‌ی والدین)","فرم رضایت والدین"]]
+];
+
+let ptGoal="", ptNeed="";
+function ptCard(x){ return `<details style="border-right:6px solid #7a6ff0"><summary>🧸 ${esc(x.t)} <span class="pill">${esc(x.fmt)}</span> <span class="pill">${esc(x.time)}</span></summary><div>
+ <p style="font-size:14px;margin-top:0"><b>پایه‌ی علمی:</b> ${esc(x.base)} · <b>سن:</b> ${x.age}</p>
+ <p style="font-size:14px">${x.g.map(k=>`<span class="pill">${PT_GOALS[k]}</span>`).join(" ")}</p>
+ <p style="font-size:14px"><b>مناسب برای:</b> ${x.n.map(k=>esc(PT_NEEDS[k]||k)).join("، ")}</p>
+ <h4>🧰 وسایل</h4><ul class="clean">${li(x.mats)}</ul>
+ <h4>📋 مراحل اجرا</h4><ol style="padding-right:20px;margin:4px 0">${x.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
+ <h4>🗣️ جمله‌های معلم</h4>${x.say.map(s=>`<div class="phr en">${esc(s)}</div>`).join(" ")}
+ ${x.watch?`<h4>👀 به چه چیزی دقت کنید</h4><p>${esc(x.watch)}</p>`:""}${x.caution?`<p class="warn" style="margin-top:8px">⚠️ ${esc(x.caution)}</p>`:""}</div></details>`; }
+function ptNotes(){ try{ return JSON.parse(localStorage.getItem("ptnotes")||"[]"); }catch(e){ return []; } }
+function viewPlay(){
+ const list = PT_GAMES.filter(x=>(!ptGoal||x.g.includes(ptGoal))&&(!ptNeed||x.n.includes(ptNeed)||x.n.includes("all")));
+ const notes = ptNotes();
+ return `<h2>🧸 بازی‌درمانی</h2><p class="lead">بازی با رویکرد درمانی برای کلاس و جلسه‌های فردی، بر پایه‌ی اصول بازی‌درمانی کودک‌محور، Theraplay و Floortime. برای بچه‌های با نیاز ویژه و همه‌ی بچه‌ها.</p>
+ <div class="warn"><b>مرز مهم:</b> «بازی‌درمانی» به معنای تخصصی‌اش کار درمانگر آموزش‌دیده و دارای مجوز است. آنچه اینجا آمده «بازی با رویکرد درمانی» برای معلم است: ساختن رابطه‌ی امن، کمک به بیان احساس و تنظیم هیجان. برای تشخیص و درمان، کودک را به متخصص ارجاع دهید.</div>
+
+ <details open><summary>📜 اصول پایه (برگرفته از اصول اکسلاین)</summary><div><ol style="padding-right:20px">
+ <li>رابطه‌ای گرم و صمیمی با کودک بسازید. رابطه مهم‌ترین ابزار است.</li>
+ <li>کودک را همان‌طور که هست بپذیرید، بدون اینکه بخواهید عوضش کنید.</li>
+ <li>فضایی امن بسازید که کودک احساس کند هر احساسی را می‌تواند بیان کند.</li>
+ <li>احساس‌های کودک را ببینید و به زبان بیاورید تا خودش آن‌ها را بشناسد.</li>
+ <li>به توانایی کودک در حل مشکلش احترام بگذارید و مسئولیت را به خودش برگردانید.</li>
+ <li>کودک رهبری می‌کند و شما دنبالش می‌روید.</li>
+ <li>عجله نکنید. تغییر آهسته و تدریجی اتفاق می‌افتد.</li>
+ <li>فقط مرزهای لازم را بگذارید: برای امنیت و برای پیوند بازی با دنیای واقعی.</li></ol></div></details>
+
+ <details><summary>🎯 مهارت‌های معلم در بازی درمانی</summary><div>
+ <div class="act"><div class="t">۱. ردیابی (توصیف کاری که کودک می‌کند)</div><p>مثل گزارشگر، کار کودک را بی‌قضاوت توصیف کنید.</p><p>«داری اون رو می‌ذاری توی جعبه.»</p><div class="phr en">You're putting it in the box.</div></div>
+ <div class="act"><div class="t">۲. انعکاس احساس</div><p>احساسی را که می‌بینید نام ببرید.</p><p>«از اینکه افتاد ناراحت شدی.»</p><div class="phr en">You feel sad that it fell.</div></div>
+ <div class="act"><div class="t">۳. برگرداندن مسئولیت</div><p>به‌جای انجام کار برای کودک، تصمیم را به خودش بسپارید.</p><p>«این رو خودت می‌تونی تصمیم بگیری.»</p><div class="phr en">You can decide.</div></div>
+ <div class="act"><div class="t">۴. تشویق به‌جای تعریف</div><p>به‌جای «چه نقاشی قشنگی!» تلاش و تصمیم کودک را ببینید.</p><p>«خیلی روش وقت گذاشتی!»</p><div class="phr en">You worked hard on that!</div></div>
+ <div class="act"><div class="t">۵. مرزگذاری به روش ACT</div><p><b>A</b> احساس را بپذیر، <b>C</b> مرز را بگو، <b>T</b> جایگزین بده.</p><p>«می‌دونم عصبانی هستی. ولی دوستت برای زدن نیست. می‌تونی این کوسن رو بزنی.»</p><div class="phr en">I know you're angry. Friends are not for hitting. You can hit the pillow.</div></div>
+ <div class="act"><div class="t">۶. پرهیز کنید از</div><ul class="clean avoid"><li>سؤال‌های پشت سر هم</li><li>آموزش و اصلاح در زمان بازی ویژه</li><li>تفسیر نقاشی یا بازی کودک</li><li>تعریف‌های کلی و قضاوت</li><li>عجله برای تمام کردن بازی</li></ul></div></div></details>
+
+ <details><summary>🧰 جعبه‌ابزار بازی‌درمانی (چک‌لیست خرید و آماده‌سازی)</summary><div>
+ <p style="font-size:14px;color:var(--muted)">اسباب‌بازی‌ها را در یک جعبه‌ی جدا نگه دارید تا فقط در زمان بازی ویژه استفاده شوند. چیزی که دارید را تیک بزنید.</p>
+ ${PT_TOOLBOX.map(([h,items],i)=>`<h4>${h}</h4>${checklist("ptbox"+i, items.map(esc))}`).join("")}
+ <p class="ok" style="font-size:13px">نکته: اسباب‌بازی‌های ساده و بدون باتری بهتر از اسباب‌بازی‌های پیچیده‌اند، چون جا برای تخیل کودک می‌گذارند.</p></div></details>
+
+ <details><summary>🏠 چیدمان و ساختار جلسه</summary><div><ul class="clean do">
+ <li><b>فضا:</b> گوشه‌ای ثابت، آرام و بدون رفت‌وآمد. اسباب‌بازی‌ها در دسترس کودک و هر کدام جای ثابت داشته باشند.</li>
+ <li><b>زمان:</b> جلسه‌ی فردی ۲۰ تا ۳۰ دقیقه، هفته‌ای یک بار، در روز و ساعت ثابت. بازی‌های گروهی ۵ تا ۱۵ دقیقه در دل کلاس.</li>
+ <li><b>شروع ثابت:</b> یک جمله‌ی همیشگی، مثلاً «این زمان بازی ویژه‌ی ماست.»</li>
+ <li><b>هشدار پایان:</b> ۵ دقیقه و ۱ دقیقه مانده به پایان خبر بدهید.</li>
+ <li><b>پایان ثابت:</b> «زمان بازی ویژه برای امروز تموم شد.» مرتب کردن وسایل با معلم است، نه با کودک.</li>
+ <li><b>والدین:</b> قبل از شروع جلسه‌های فردی با والدین هماهنگ کنید و رضایت بگیرید.</li>
+ <li><b>لمس:</b> هر بازی لمسی فقط با اجازه‌ی کودک باشد.</li></ul></div></details>
+
+ <details><summary>🚩 کِی باید ارجاع داد؟</summary><div><p>اگر هر یک از این‌ها را دیدید، با والدین صحبت کنید و مشاوره با روانشناس کودک یا بازی‌درمانگر را پیشنهاد دهید:</p><ul class="clean">
+ <li>پرخاشگری شدید یا مداوم که با راهکارهای کلاس بهتر نمی‌شود</li><li>برگشت به رفتارهای کودکانه‌تر (پسرفت ناگهانی)</li><li>گوشه‌گیری شدید یا تغییر ناگهانی در رفتار</li><li>ترس‌ها یا کابوس‌های مداوم که زندگی روزمره را مختل می‌کند</li><li>بازی‌های تکراری با موضوع آسیب یا رویدادهای ناراحت‌کننده</li><li>هر حرفی از کودک که نشان دهد ممکن است آسیب دیده باشد. در این مورد طبق دستورالعمل مدرسه یا مهد عمل کنید و موضوع را فوراً به مسئول یا مشاور بگویید.</li></ul></div></details>
+
+ <h3>🎲 بازی‌ها (${faN(list.length)} بازی)</h3>
+ <label>هدف</label><div class="chips"><button class="chip ${!ptGoal?"on":""}" data-ptgoal="">همه</button>${Object.entries(PT_GOALS).map(([k,v])=>`<button class="chip ${ptGoal===k?"on":""}" data-ptgoal="${k}">${v}</button>`).join("")}</div>
+ <label>برای کودک با</label><div class="chips"><button class="chip ${!ptNeed?"on":""}" data-ptneed="">همه</button>${Object.entries(PT_NEEDS).filter(([k])=>k!=="all").map(([k,v])=>`<button class="chip ${ptNeed===k?"on":""}" data-ptneed="${k}">${esc(v)}</button>`).join("")}</div>
+ ${list.map(ptCard).join("")||`<p>بازی‌ای با این ترکیب پیدا نشد.</p>`}
+
+ <div class="card"><h3 style="margin-top:0">📝 فرم مشاهده‌ی جلسه</h3>
+ <p style="font-size:14px;color:var(--muted);margin:0">بعد از هر جلسه چند خط بنویسید. فقط روی همین گوشی ذخیره می‌شود.</p>
+ <div class="two"><div><label>اسم کودک</label><input type="text" id="ptName"></div><div><label>بازی</label><select id="ptGame">${PT_GAMES.map(x=>`<option>${esc(x.t)}</option>`).join("")}</select></div></div>
+ <label>موضوعات بازی و احساس غالب</label><input type="text" id="ptTheme" placeholder="مثلاً: بازی قدرت، خوشحال و پرانرژی">
+ <label>یادداشت</label><textarea id="ptNote" placeholder="چه دیدید؟ چه تغییری نسبت به جلسه‌ی قبل؟"></textarea>
+ <button class="go" id="ptSave">ذخیره‌ی یادداشت</button>
+ ${notes.length?`<h4>یادداشت‌های قبلی</h4>${notes.slice().reverse().map((x,i)=>`<div class="act"><div class="t">${esc(x.name||"کودک")} · <span style="font-weight:400;font-size:13px">${esc(x.date)} · ${esc(x.game)}</span> <button class="ghost" style="margin:0 6px;padding:2px 8px" data-ptdel="${notes.length-1-i}">✕</button></div>${x.theme?`<p style="font-size:14px">🎭 ${esc(x.theme)}</p>`:""}<p>${esc(x.note)}</p></div>`).join("")}`:""}</div>
+
+ <div class="card"><h3 style="margin-top:0">📚 برای یادگیری بیشتر</h3>
+ ${[["Association for Play Therapy (انجمن بازی‌درمانی آمریکا)","https://www.a4pt.org/"],["The Theraplay Institute","https://theraplay.org/"],["ICDL ـ رویکرد DIR/Floortime","https://www.icdl.com/"]].map(l=>`<div class="act">${linkA(l[0],l[1])}</div>`).join("")}
+ <div class="act"><div class="t en" style="text-align:left">Play Therapy: The Art of the Relationship</div><p style="font-size:14px">Garry Landreth · مرجع اصلی بازی‌درمانی کودک‌محور</p></div>
+ <div class="act"><div class="t en" style="text-align:left">Dibs in Search of Self</div><p style="font-size:14px">Virginia Axline · روایت خواندنی یک بازی‌درمانی (با ترجمه‌ی فارسی «دیبز در جستجوی خویشتن»)</p></div>
+ <div class="act"><div class="t en" style="text-align:left">101 Favorite Play Therapy Techniques</div><p style="font-size:14px">Kaduson و Schaefer · مجموعه‌ی تکنیک‌های کاربردی</p></div></div>`;
+}
+function ptForTraits(tr){ const set=new Set(tr); return PT_GAMES.filter(x=>x.k!=="special" && x.n.some(n=>set.has(n))).slice(0,4); }
+
+/* ===================== تبلیغات ===================== */
+const AD_FEATURES = ["بازی‌محور و شاد","بر اساس هوش‌های چندگانه‌ی گاردنر","آهنگ، قصه و حرکت","کلاس‌های کم‌جمعیت","مناسب کودکان با نیازهای ویژه","گزارش پیشرفت برای والدین","بدون فشار کتاب و برگه","آمادگی برای مدرسه","آموزش فونیکس و خواندن","تقویت مهارت گفتاری"];
+const AD_OFFERS = ["جلسه‌ی اول رایگان","تخفیف ثبت‌نام زودهنگام","تخفیف خواهر و برادر","تخفیف معرفی دوستان"];
+const AD_FORMATS = [["group","حضوری گروهی"],["semi","نیمه‌خصوصی"],["private","خصوصی"],["online","آنلاین"]];
+const AD_AGES = [["۳ تا ۴","۳ تا ۴ سال"],["۴ تا ۵","۴ تا ۵ سال"],["۵ تا ۶","۵ تا ۶ سال"],["۶ تا ۷","۶ تا ۷ سال"],["۳ تا ۷","۳ تا ۷ سال"]];
+const AD_STYLES = [["fun","🎈 شاد و رنگی"],["pastel","🌸 پاستلی آرام"],["chic","✨ ساده و شیک"]];
+const AD_SIZES = [["post","📷 پست اینستاگرام (مربع)",1080,1080],["story","📱 استوری و واتساپ",1080,1920],["print","🖨️ چاپی (A4)",1240,1754]];
+function adDefault(){ return {title:"کلاس زبان انگلیسی کودک",teacher:"",years:"۵",ages:"۳ تا ۷",format:"group",place:"",days:"",time:"",start:"",sessions:"",capacity:"۸",price:"",offers:["جلسه‌ی اول رایگان"],features:["بازی‌محور و شاد","بر اساس هوش‌های چندگانه‌ی گاردنر","آهنگ، قصه و حرکت","کلاس‌های کم‌جمعیت"],phone:"",telegram:"",instagram:"",style:"fun",size:"post",v:0}; }
+function adGet(){ try{ return Object.assign(adDefault(), JSON.parse(localStorage.getItem("ad")||"{}")); }catch(e){ return adDefault(); } }
+function adSet(d){ try{ localStorage.setItem("ad",JSON.stringify(d)); }catch(e){} }
+const fmtFa = k => (AD_FORMATS.find(f=>f[0]===k)||["",""])[1];
+function adStartFa(d){ if(!d.start) return ""; try{ return faDate(fromIso(d.start)).split(" ").slice(1).join(" "); }catch(e){ return ""; } }
+
+/* ---------- پوستر ---------- */
+const PAL = {
+ fun:{bg:["#ffd25e","#ff8f6b"],card:"#ffffff",ink:"#2b2a33",acc:"#e8505b",acc2:"#3d8bfd",deco:["#3d8bfd","#2fb380","#7a6ff0","#ffffff","#e8505b"]},
+ pastel:{bg:["#fde7f0","#e3f1ff"],card:"#ffffff",ink:"#3b3550",acc:"#d65db1",acc2:"#5aa8c8",deco:["#f7b8d2","#b8dcf7","#c9f0d2","#ffe3a8","#d9ccff"]},
+ chic:{bg:["#1f3b57","#244a6e"],card:"#fffaf3",ink:"#1f2a37",acc:"#f0a020",acc2:"#1f3b57",deco:["#f0a020","#ffffff","#7fc8f8","#ffd25e"]}
+};
+const PFONT = 'Vazirmatn, system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif';
+function rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function wrapLines(ctx,text,maxW){ const words=String(text).split(/\s+/); const lines=[]; let line=""; words.forEach(w=>{ const t=line?line+" "+w:w; if(ctx.measureText(t).width>maxW && line){ lines.push(line); line=w; } else line=t; }); if(line) lines.push(line); return lines; }
+function star(ctx,cx,cy,r,color){ ctx.save(); ctx.fillStyle=color; ctx.beginPath(); for(let i=0;i<10;i++){ const a=Math.PI/5*i-Math.PI/2, rad=i%2?r*0.45:r; ctx.lineTo(cx+Math.cos(a)*rad, cy+Math.sin(a)*rad); } ctx.closePath(); ctx.fill(); ctx.restore(); }
+function drawPoster(d){
+ const sz=AD_SIZES.find(s=>s[0]===d.size)||AD_SIZES[0]; const W=sz[2], H=sz[3]; const P=PAL[d.style]||PAL.fun;
+ const cv=document.createElement("canvas"); cv.width=W; cv.height=H; cv.setAttribute("dir","rtl"); cv.style.display="none"; document.body.appendChild(cv);
+ const ctx=cv.getContext("2d"); try{ ctx.direction="rtl"; }catch(e){}
+ const g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,P.bg[0]); g.addColorStop(1,P.bg[1]); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+ // decorations only near the edges so they never sit behind text
+ const r=rng(7+(d.v||0)*13);
+ for(let i=0;i<16;i++){ const side=i%4; let x,y; if(side===0){x=r()*W*0.09;y=H*0.18+r()*H*0.7;} else if(side===1){x=W-r()*W*0.09;y=H*0.18+r()*H*0.7;} else if(side===2){x=W*0.5+r()*W*0.15;y=r()*H*0.06;} else {x=r()*W;y=H*0.92-r()*H*0.04;}
+  const s=14+r()*34, c=P.deco[i%P.deco.length]; if(i%2===0) star(ctx,x,y,s*0.7,c); else { ctx.fillStyle=c; ctx.globalAlpha=0.55; ctx.beginPath(); ctx.arc(x,y,s*0.6,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; } }
+ ctx.textAlign="center"; ctx.textBaseline="middle";
+ ctx.font=`900 ${Math.round(W*0.075)}px Nunito, ${PFONT}`;
+ [["A",0.12,0.05,P.acc],["B",0.25,0.035,P.acc2],["C",0.38,0.06,"#2fb380"]].forEach(([l,x,y,c],i)=>{ ctx.save(); ctx.translate(W*x,H*y+W*0.03); ctx.rotate((i-1)*0.18); ctx.fillStyle=d.style==="chic"?"#ffffff":c; ctx.fillText(l,0,0); ctx.restore(); });
+ const rx=W*0.82, ry=W*0.14, rcol=["#e8505b","#f0a020","#ffd25e","#2fb380","#3d8bfd"]; rcol.forEach((c,i)=>{ ctx.strokeStyle=c; ctx.lineWidth=W*0.016; ctx.beginPath(); ctx.arc(rx,ry,W*0.1-i*W*0.017,Math.PI,0); ctx.stroke(); });
+ // contact bar
+ const cb=[d.phone?`📞 ${faN(d.phone)}`:"", d.instagram?`📷 ${d.instagram.replace(/^@?/,"@")}`:"", d.telegram?`✈️ ${d.telegram.replace(/^@?/,"@")}`:""].filter(Boolean);
+ const barH=W*0.15; ctx.fillStyle=d.style==="chic"?P.acc:P.ink; ctx.fillRect(0,H-barH,W,barH);
+ ctx.fillStyle=d.style==="chic"?P.ink:"#ffffff"; ctx.font=`700 ${Math.round(W*0.034)}px ${PFONT}`; ctx.fillText("برای ثبت‌نام و مشاوره پیام دهید",W/2,H-barH+W*0.04);
+ ctx.font=`700 ${Math.round(W*(cb.length>2?0.03:0.036))}px ${PFONT}`; ctx.save(); try{ctx.direction="ltr";}catch(e){} ctx.fillText(cb.join("   ")||"شماره‌ی تماس را وارد کنید",W/2,H-barH+W*0.1); ctx.restore();
+ // content (auto-fit between top area and bar)
+ const top=W*0.26, bottom=H-barH-W*0.04, M=W*0.07, tColor=d.style==="chic"?"#ffffff":P.ink;
+ const badge = d.offers.includes("جلسه‌ی اول رایگان")?"🎁 جلسه‌ی اول رایگان":"✨ ثبت‌نام آغاز شد";
+ const feats=(d.features||[]).slice(0,d.size==="post"?4:6);
+ const info=[]; if(d.days||d.time) info.push(`🗓️ ${[d.days,d.time?"ساعت "+d.time:""].filter(Boolean).join("، ")}`); if(d.start) info.push(`🚀 شروع: ${adStartFa(d)}`); info.push(`📍 ${fmtFa(d.format)}${d.place?"، "+d.place:""}`); if(d.sessions) info.push(`📚 ${d.sessions}`); if(d.capacity) info.push(`👧 ظرفیت محدود: ${faN(d.capacity)} نفر`); const oo=d.offers.filter(o=>o!=="جلسه‌ی اول رایگان"); if(oo.length) info.push(`🎉 ${oo.join("، ")}`);
+ if(d.size==="post") info.splice(4);
+ const teacher = d.teacher?`مدرس: ${d.teacher}${d.years?"، "+faN(d.years)+" سال تجربه":""}`:"";
+ function layout(s, draw){
+  let y=top; const gap=W*0.025*s;
+  ctx.font=`700 ${Math.round(W*0.036*s)}px ${PFONT}`; const bh=W*0.07*s; if(draw){ const bw=ctx.measureText(badge).width+W*0.08*s; ctx.fillStyle=P.acc; rr(ctx,(W-bw)/2,y,bw,bh,bh/2); ctx.fill(); ctx.fillStyle="#fff"; ctx.textAlign="center"; ctx.fillText(badge,W/2,y+bh/2); } y+=bh+gap*1.5;
+  ctx.font=`900 ${Math.round(W*0.085*s)}px ${PFONT}`; const tl=wrapLines(ctx,d.title||"کلاس زبان انگلیسی کودک",W-2*M).slice(0,2); tl.forEach(l=>{ if(draw){ ctx.fillStyle=tColor; ctx.textAlign="center"; ctx.fillText(l,W/2,y+W*0.05*s); } y+=W*0.1*s; });
+  ctx.font=`700 ${Math.round(W*0.045*s)}px ${PFONT}`; if(draw){ ctx.fillStyle=d.style==="chic"?P.acc:P.acc2; ctx.fillText(`ویژه‌ی کودکان ${d.ages} سال`,W/2,y+W*0.03*s); } y+=W*0.06*s+gap;
+  const lh=W*0.066*s, ch=feats.length*lh+W*0.05*s;
+  if(feats.length){ if(draw){ ctx.fillStyle=P.card; ctx.globalAlpha=0.96; rr(ctx,M,y,W-2*M,ch,W*0.04); ctx.fill(); ctx.globalAlpha=1; ctx.textAlign="right"; ctx.font=`600 ${Math.round(W*0.04*s)}px ${PFONT}`; let fy=y+W*0.025*s+lh/2; feats.forEach((f,i)=>{ const c=P.deco[i%P.deco.length]; ctx.fillStyle=c==="#ffffff"?P.acc:c; ctx.beginPath(); ctx.arc(W-M-W*0.05,fy,W*0.017*s,0,Math.PI*2); ctx.fill(); ctx.fillStyle=P.ink; ctx.fillText(f,W-M-W*0.09,fy); fy+=lh; }); } y+=ch+gap*1.5; }
+  ctx.font=`600 ${Math.round(W*0.038*s)}px ${PFONT}`; ctx.textAlign="center";
+  info.forEach(l=>{ wrapLines(ctx,l,W-2*M).forEach(x=>{ if(draw){ ctx.fillStyle=tColor; ctx.fillText(x,W/2,y+W*0.03*s); } y+=W*0.058*s; }); });
+  if(teacher){ y+=gap*0.5; ctx.font=`700 ${Math.round(W*0.035*s)}px ${PFONT}`; if(draw){ ctx.fillStyle=tColor; ctx.fillText(teacher,W/2,y+W*0.03*s); } y+=W*0.06*s; }
+  return y;
+ }
+ let s=1.15; while(s>0.55 && layout(s,false)>bottom) s-=0.03;
+ const used=layout(s,false)-top, extra=Math.max(0,(bottom-top-used)/2);
+ ctx.save(); ctx.translate(0,Math.min(extra,W*0.08)); layout(s,true); ctx.restore();
+ cv.remove(); return cv;
+}
+
+/* ---------- متن‌ها ---------- */
+function adTexts(d){
+ const ages=`${d.ages} سال`, f=fmtFa(d.format), feats=d.features||[], offers=d.offers||[];
+ const when=[d.days,d.time?`ساعت ${d.time}`:""].filter(Boolean).join("، ");
+ const start=adStartFa(d);
+ const contact=[d.phone?`📞 ${faN(d.phone)}`:"", d.telegram?`✈️ تلگرام: ${d.telegram.replace(/^@?/,"@")}`:"", d.instagram?`📷 اینستاگرام: ${d.instagram.replace(/^@?/,"@")}`:""].filter(Boolean).join("\n");
+ const teacher = d.teacher?`${d.teacher}${d.years?`، با ${faN(d.years)} سال تجربه در آموزش زبان به کودکان`:""}`:(d.years?`مدرس با ${faN(d.years)} سال تجربه در آموزش زبان به کودکان`:"");
+ const place = d.place?` در ${d.place}`:"";
+ const tags = ["#آموزش_زبان_کودک","#زبان_انگلیسی_کودک","#کلاس_زبان_کودک","#زبان_کودک","#آموزش_بازی_محور","#هوش_های_چندگانه","#EnglishForKids","#KidsEnglish","#PreschoolEnglish", ...(d.place?[`#زبان_کودک_${d.place.replace(/\s+/g,"_")}`,`#${d.place.replace(/\s+/g,"_")}`]:[]), ...(d.format==="online"?["#کلاس_آنلاین_کودک"]:[])].join(" ");
+ const featLines = feats.map(x=>`✅ ${x}`).join("\n");
+ const offerLines = offers.map(x=>`🎁 ${x}`).join("\n");
+ const hooks = [
+  `فرزندتان می‌تواند انگلیسی را با بازی و خنده یاد بگیرد! 🎈`,
+  `انگلیسی برای بچه‌ها، بدون استرس، بدون برگه، فقط با بازی 🌈`,
+  `وقتی یادگیری بازی باشد، بچه‌ها خودشان دنبالش می‌روند ✨`
+ ];
+ const hook = hooks[(d.v||0)%hooks.length];
+ return {
+  caption:`${hook}\n\n📣 ثبت‌نام ${d.title}${place}\n👧🧒 ویژه‌ی کودکان ${ages}\n🏫 ${f}${when?`\n🗓️ ${when}`:""}${start?`\n🚀 شروع از ${start}`:""}${d.sessions?`\n📚 ${d.sessions}`:""}\n\n${featLines}${offerLines?`\n\n${offerLines}`:""}${d.capacity?`\n\n⏳ ظرفیت محدود: فقط ${faN(d.capacity)} نفر`:""}${teacher?`\n\n👩‍🏫 ${teacher}`:""}\n\n📩 برای ثبت‌نام و مشاوره‌ی رایگان دایرکت بدهید یا پیام بفرستید:\n${contact||"(راه تماس را وارد کنید)"}\n\n${tags}`,
+  story:[`🎬 استوری ۱ (کنجکاوی): «فکر می‌کنید بچه‌ی ۴ ساله می‌تواند انگلیسی حرف بزند؟ 🤔» + نظرسنجی بله/نه`,`🎬 استوری ۲ (نمایش): ویدیوی کوتاه از وسایل کلاس، کارت‌ها و عروسک یا یک آهنگ کلاس (بدون چهره‌ی بچه‌ها، مگر با اجازه‌ی کتبی والدین) + متن: «کلاس‌های ما این‌طوری‌اند 🎈»`,`🎬 استوری ۳ (دعوت): پوستر استوری + استیکر لینک یا «پیام بدهید» + متن: «${offers[0]||"ظرفیت محدود است"} 🎁»`,`🎬 استوری ۴ (یادآوری، روز آخر): «فقط چند جای خالی مانده! ⏳» + استیکر شمارش معکوس`],
+  messageLong:`سلام وقت بخیر 🌷\n\nبه اطلاع می‌رسانم ثبت‌نام ${d.title}${place} برای کودکان ${ages} آغاز شده است.\n\n🏫 نوع کلاس: ${f}${when?`\n🗓️ زمان: ${when}`:""}${start?`\n🚀 شروع: ${start}`:""}${d.sessions?`\n📚 ${d.sessions}`:""}${d.price?`\n💳 شهریه: ${d.price}`:""}\n\nویژگی‌های کلاس:\n${featLines}${offerLines?`\n\n${offerLines}`:""}${d.capacity?`\n\nظرفیت هر کلاس ${faN(d.capacity)} نفر است.`:""}${teacher?`\n\n👩‍🏫 ${teacher}`:""}\n\nبرای ثبت‌نام یا مشاوره:\n${contact||"(راه تماس)"}\n\nخوشحال می‌شوم اگر این پیام را برای دوستانی که فرزند خردسال دارند هم بفرستید 🙏`,
+  messageShort:`🎈 ثبت‌نام ${d.title} | کودکان ${ages} | ${f}${start?` | شروع ${start}`:""}${offers[0]?` | ${offers[0]}`:""}\n📩 ${d.phone?faN(d.phone):(d.telegram||d.instagram||"")}`,
+  personal:`سلام [اسم] جان، وقتت بخیر 🌷\nمی‌خواستم خبر بدهم که کلاس‌های زبان انگلیسی کودک خودم را${place} شروع کرده‌ام، برای بچه‌های ${ages}. کلاس‌ها کاملاً بازی‌محور است، با آهنگ و قصه.${offers.includes("جلسه‌ی اول رایگان")?" جلسه‌ی اول هم رایگان است تا بچه‌ها فضا را ببینند.":""}\nاگر [اسم کودک] یا بچه‌های دوستانت دوست داشته باشند، خوشحال می‌شوم ببینمشان 😊`,
+  sms:`ثبت‌نام ${d.title} کودکان ${ages}${offers[0]?`، ${offers[0]}`:""}. ظرفیت محدود. ${d.phone?faN(d.phone):""}`,
+  bio:`👩‍🏫 مدرس زبان انگلیسی کودک${d.years?` | ${faN(d.years)} سال تجربه`:""}\n🌈 آموزش بازی‌محور بر اساس هوش‌های چندگانه\n👧 ویژه‌ی ${ages}${d.place?` | ${d.place}`:""}${d.format==="online"?" | آنلاین":""}\n👇 ثبت‌نام و مشاوره`,
+  divar:`عنوان: ${d.title}${place} | کودکان ${ages}\n\nتوضیحات:\nآموزش زبان انگلیسی به کودکان ${ages} با روش بازی‌محور، آهنگ، قصه و حرکت.\n${featLines}\n${f}${when?` | ${when}`:""}${start?` | شروع ${start}`:""}${d.capacity?` | ظرفیت ${faN(d.capacity)} نفر`:""}\n${offerLines}\n${teacher?teacher+"\n":""}تماس: ${d.phone?faN(d.phone):"..."}`,
+  faq:[["سن مناسب برای شروع زبان چند سالگی است؟","از ۳ سالگی، به شرط اینکه آموزش با بازی، آهنگ و حرکت باشد و فشاری روی کودک نباشد. در این سن بچه‌ها زبان را طبیعی و بدون ترس یاد می‌گیرند."],["آیا زبان دوم باعث تأخیر در فارسی صحبت کردن می‌شود؟","نه. پژوهش‌ها نشان می‌دهد یادگیری زبان دوم باعث تأخیر یا اختلال زبانی نمی‌شود. حتی به رشد شناختی کمک می‌کند."],["در کلاس دقیقاً چه کار می‌کنید؟","آهنگ، بازی‌های حرکتی، قصه با عروسک، کاردستی و بازی‌های گروهی. هر جلسه چند لغت و جمله‌ی کاربردی تمرین می‌شود."],["از کجا بفهمم بچه‌ام پیشرفت کرده؟","بعد از هر جلسه پیامی با لغت‌های آن جلسه و یک آهنگ برای تمرین در خانه می‌فرستم. هر چند وقت یک بار هم گزارش پیشرفت می‌دهم."],["بچه‌ی من خجالتی است. مشکلی نیست؟","اصلاً. فضای کلاس امن و بدون اجبار به حرف زدن است. بچه‌های خجالتی معمولاً اول تماشا می‌کنند و بعد کم‌کم شرکت می‌کنند."],...(feats.includes("مناسب کودکان با نیازهای ویژه")?[["برای کودک با ADHD یا اوتیسم هم مناسب است؟","بله. فعالیت‌ها برای نیازهای هر کودک تطبیق داده می‌شود و در صورت نیاز با درمانگر کودک هماهنگ می‌شوم."]]:[])],
+  reels:[["۱. «یک روز در کلاس ما»","۱۵ ثانیه: آماده کردن وسایل، کارت‌ها، عروسک، و اسم کلاس روی صفحه. بدون چهره‌ی بچه‌ها."],["۲. «سه بازی که در خانه با بچه‌تان انگلیسی کار کنید»","خودتان جلوی دوربین ۳ بازی ساده را نشان دهید: Simon says، کیسه‌ی رازآلود، شکار رنگ. محتوای مفید بیشترین ذخیره و اشتراک را می‌گیرد."],["۳. «آهنگ هفته»","یک آهنگ کلاس را با حرکت دست اجرا کنید تا والدین با بچه‌ها در خانه تکرار کنند."],["۴. «اشتباه رایج والدین»","مثلاً: «مجبور کردن بچه به گفتن کلمه». در ۳۰ ثانیه بگویید چرا و به‌جایش چه کنند."],["۵. «پشت صحنه‌ی آماده‌سازی کلاس»","تایم‌لپس کاردستی یا چیدمان کلاس با یک آهنگ شاد."]],
+  plan:[["روز ۱","تکمیل پروفایل: عکس حرفه‌ای، بیو (پایین)، هایلایت‌های «ثبت‌نام»، «کلاس ما»، «سؤالات»."],["روز ۲","پست اصلی: پوستر مربع + کپشن کامل."],["روز ۳","ریلز ۱: یک روز در کلاس ما."],["روز ۴","ارسال پیام شخصی برای ۲۰ نفر از آشنایان و پیام کوتاه در گروه‌های محله و مدرسه (با اجازه‌ی مدیر گروه)."],["روز ۵","ریلز ۲: سه بازی برای خانه (محتوای مفید)."],["روز ۶","سری استوری ۱ تا ۳ + نظرسنجی."],["روز ۷","آگهی در دیوار + ثبت آموزشگاه یا کلاس در نقشه‌ی نشان یا بلد (اگر مکان ثابت دارید)."],["روز ۸","پست کاروسل: «۵ سؤال رایج والدین» با جواب‌ها."],["روز ۹","ریلز ۳: آهنگ هفته."],["روز ۱۰","یادآوری: استوری «ظرفیت محدود» + پیام کوتاه در کانال‌ها."],["روز ۱۲","پست: معرفی خودتان و رویکردتان (چرا بازی‌محور؟)."],["روز ۱۴","آخرین یادآوری با شمارش معکوس + برگزاری جلسه‌ی آزمایشی رایگان."]],
+  checklist:["پروفایل اینستاگرام حرفه‌ای (Professional) با بیو، شماره‌ی تماس و هایلایت","پوستر پست + پوستر استوری + نسخه‌ی چاپی برای نصب (با اجازه) در مهدها، کتاب‌فروشی‌ها و فروشگاه‌های کودک محله","پیام آماده برای واتساپ، تلگرام و پیامک","جلسه‌ی آزمایشی رایگان یا کلاس نمونه برای والدین","تخفیف معرفی: هر والدی که کسی را معرفی کند، تخفیف بگیرد","فرم ثبت‌نام ساده (اسم کودک، سن، شماره‌ی والد، نیاز خاص)","پاسخ آماده به سؤالات رایج (پایین همین صفحه)","نظر واقعی والدین: فقط نظرهای واقعی و با اجازه‌ی خودشان منتشر شود","عکس و فیلم بچه‌ها فقط با اجازه‌ی کتبی والدین. بهتر است چهره‌ها پوشانده شوند","ثبت در نقشه‌ی نشان یا بلد، و آگهی دیوار","حضور در گروه‌های والدین محله، مدرسه و مهد (با اجازه‌ی مدیر گروه)","ارسال منظم محتوا: هفته‌ای ۳ پست یا ریلز و استوری روزانه"]
+ };
+}
+
+let adOut=false;
+function viewAd(){
+ const d=adGet();
+ const chipsX=(field,opts,multi)=>`<div class="chips">${opts.map(([v,l])=>{ const on=multi?(d[field]||[]).includes(v):d[field]===v; return `<button class="chip ${on?"on":""}" data-adf="${field}" data-v="${esc(v)}" ${multi?'data-m="1"':""}>${l}</button>`; }).join("")}</div>`;
+ const inp=(k,label,ph)=>`<div><label>${label}</label><input type="text" data-adi="${k}" value="${esc(d[k]||"")}" placeholder="${esc(ph)}"></div>`;
+ return `<h2>📣 تبلیغات کلاس من</h2><p class="lead">کلاستان را معرفی کنید تا پوستر تبلیغاتی برای اینستاگرام، واتساپ، تلگرام و چاپ، به همراه همه‌ی متن‌ها و برنامه‌ی تبلیغات، آماده شود.</p>
+ <div class="card"><h3 style="margin-top:0">📝 مشخصات کلاس</h3>
+  ${inp("title","عنوان کلاس","کلاس زبان انگلیسی کودک")}
+  <div class="two">${inp("teacher","اسم مدرس (اختیاری)","مثلاً: خانم ...")}${inp("years","سال‌های تجربه","۵")}</div>
+  <label>سن بچه‌ها</label>${chipsX("ages",AD_AGES,false)}
+  <label>نوع کلاس</label>${chipsX("format",AD_FORMATS,false)}
+  <div class="two">${inp("place","محله یا شهر (اختیاری)","مثلاً: نیاوران")}${inp("days","روزها","مثلاً: شنبه و دوشنبه")}</div>
+  <div class="two">${inp("time","ساعت","مثلاً: ۱۶ تا ۱۷")}<div><label>تاریخ شروع</label><input type="date" data-adi="start" value="${esc(d.start||"")}"></div></div>
+  <div class="two">${inp("sessions","تعداد جلسات (اختیاری)","مثلاً: ۱۲ جلسه، هفته‌ای ۲ بار")}${inp("capacity","ظرفیت هر کلاس","۸")}</div>
+  ${inp("price","شهریه (اختیاری؛ روی پوستر نمی‌آید)","مثلاً: ماهانه ...")}
+  <label>پیشنهاد ویژه</label>${chipsX("offers",AD_OFFERS.map(x=>[x,x]),true)}
+  <label>ویژگی‌های کلاس (۴ تا ۶ مورد)</label>${chipsX("features",AD_FEATURES.map(x=>[x,x]),true)}
+  <div class="two">${inp("phone","شماره‌ی تماس یا واتساپ","۰۹۱۲...")}${inp("instagram","آیدی اینستاگرام","@...")}</div>
+  ${inp("telegram","آیدی تلگرام (اختیاری)","@...")}
+ </div>
+ <div class="card"><h3 style="margin-top:0">🎨 طراحی پوستر</h3>
+  <label>سبک</label>${chipsX("style",AD_STYLES,false)}
+  <label>اندازه</label>${chipsX("size",AD_SIZES.map(s=>[s[0],s[1]]),false)}
+ </div>
+ <button class="go" id="adGo" style="width:100%;font-size:17px">✨ ساخت پوستر و متن‌های تبلیغاتی</button>
+ <div id="adOut">${adOut?adOutHTML(d):""}</div>`;
+}
+function copyBox(id,text){ return `<div class="out" id="${id}">${esc(text)}</div><button class="ghost" data-copy="${id}">📋 کپی</button>`; }
+function adOutHTML(d){
+ const T=adTexts(d);
+ return `<div class="card tint" style="--c:#e86a4f;margin-top:16px"><h3 style="margin-top:0">🖼️ پوستر</h3>
+  <div style="text-align:center"><img id="adImg" alt="پوستر" style="max-width:100%;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.15)"></div>
+  <p style="font-size:14px;margin:8px 0">برای ذخیره: <b>انگشتتان را روی پوستر نگه دارید</b> و «Save to Photos» یا «ذخیره‌ی تصویر» را بزنید. یا دکمه‌ی زیر را بزنید.</p>
+  <button class="go" id="adShare">📤 ذخیره یا اشتراک‌گذاری پوستر</button> <button class="ghost" id="adAgain">🔄 طرح دیگر</button>
+  <p style="font-size:13px;color:var(--muted)">برای نسخه‌ی استوری یا چاپی، «اندازه» را بالا عوض کنید و دوباره «ساخت» را بزنید.</p></div>
+ <div class="card tint" style="--c:#d65db1"><h3 style="margin-top:0">📷 کپشن اینستاگرام</h3>${copyBox("cap",T.caption)}<button class="ghost" id="adAgain2">🔄 شروع دیگر برای کپشن</button></div>
+ <div class="card tint" style="--c:#3d8bfd"><h3 style="margin-top:0">💬 پیام واتساپ و تلگرام (کامل)</h3>${copyBox("msgL",T.messageLong)}</div>
+ <div class="card tint" style="--c:#3d8bfd"><h3 style="margin-top:0">⚡ پیام کوتاه برای گروه‌ها و کانال‌ها</h3>${copyBox("msgS",T.messageShort)}</div>
+ <div class="card tint" style="--c:#2fb380"><h3 style="margin-top:0">💌 پیام شخصی برای آشنایان</h3><p style="font-size:13px;color:var(--muted);margin:0">جاهای [اسم] را قبل از فرستادن عوض کنید.</p>${copyBox("msgP",T.personal)}</div>
+ <div class="card tint" style="--c:#2fb380"><h3 style="margin-top:0">📱 پیامک</h3>${copyBox("sms",T.sms)}</div>
+ <div class="card tint" style="--c:#7a6ff0"><h3 style="margin-top:0">👤 بیو اینستاگرام</h3>${copyBox("bio",T.bio)}</div>
+ <div class="card tint" style="--c:#f0a020"><h3 style="margin-top:0">🏷️ آگهی دیوار</h3>${copyBox("divar",T.divar)}</div>
+ <div class="card tint" style="--c:#d65db1"><h3 style="margin-top:0">🎬 سری استوری</h3><ul class="clean">${li(T.story)}</ul></div>
+ <div class="card tint" style="--c:#e86a4f"><h3 style="margin-top:0">🎥 ۵ ایده‌ی ریلز</h3>${T.reels.map(r=>`<div class="act"><div class="t">${esc(r[0])}</div><p>${esc(r[1])}</p></div>`).join("")}</div>
+ <div class="card tint" style="--c:#3d8bfd"><h3 style="margin-top:0">❓ جواب آماده به سؤالات والدین</h3>${T.faq.map((q,i)=>`<div class="act"><div class="t">${esc(q[0])}</div><p>${esc(q[1])}</p></div>`).join("")}${copyBox("faq",T.faq.map(q=>`❓ ${q[0]}\n✅ ${q[1]}`).join("\n\n"))}</div>
+ <div class="card tint" style="--c:#2fb380"><h3 style="margin-top:0">🗓️ برنامه‌ی ۱۴ روزه‌ی تبلیغات</h3>${checklist("adplan",T.plan.map(p=>`<b>${esc(p[0])}:</b> ${esc(p[1])}`))}</div>
+ <div class="card tint" style="--c:#7a6ff0"><h3 style="margin-top:0">✅ چک‌لیست کامل تبلیغات</h3>${checklist("adchk",T.checklist.map(esc))}</div>
+ <div class="warn" style="font-size:13px">نظر والدین را فقط وقتی منتشر کنید که واقعی باشد و خودشان اجازه داده باشند. عکس بچه‌ها را هم فقط با اجازه‌ی کتبی والدین منتشر کنید.</div>
+ <button class="ghost" id="adAI" style="display:none">🤖 متن‌های خلاقانه‌تر با هوش مصنوعی</button><div class="out" id="adAIOut" style="display:none"></div>`;
+}
+let adBlob=null;
+async function adRender(){
+ const d=adGet(); const img=document.getElementById("adImg"); if(!img) return;
+ try{ if(document.fonts && document.fonts.load){ await Promise.race([Promise.all([document.fonts.load('900 40px Vazirmatn'),document.fonts.load('700 40px Vazirmatn'),document.fonts.load('900 40px Nunito')]), new Promise(r=>setTimeout(r,1500))]); } }catch(e){}
+ const cv=drawPoster(d); img.src=cv.toDataURL("image/png");
+ adBlob=null; try{ cv.toBlob(b=>{ adBlob=b; },"image/png"); }catch(e){}
+ const s=await getSample(); const b=document.getElementById("adAI"); if(s&&b) b.style.display="inline-block";
+}
+
 /* ---------- wiring ---------- */
-RENDER.class = viewClass; RENDER.songs = viewSongs; RENDER.news = viewNews; RENDER.growth = viewGrowth; RENDER.calendar = viewCalendar;
+RENDER.class = viewClass; RENDER.songs = viewSongs; RENDER.news = viewNews; RENDER.growth = viewGrowth; RENDER.calendar = viewCalendar; RENDER.play = viewPlay; RENDER.ad = ()=>{ if(adOut) setTimeout(adRender,30); return viewAd(); };
 const _home = RENDER.home;
-RENDER.home = ()=> (()=>{ const u=PF?upcoming(todayD(),14):[]; return u.length?`<div class="ok" style="margin-bottom:12px">📅 امروز: ${esc(faDate(todayD()))}<br><b>${u[0].o.ic} مناسبت پیش رو: ${esc(u[0].o.fa)} (${esc(relDay(u[0].d))})</b> <button class="ghost" style="margin:6px 0 0" data-planfor="${iso(u[0].d)}" data-planocc="${u[0].o.id}">طرح درس این مناسبت</button></div>`:(PF?`<div class="ok" style="margin-bottom:12px">📅 امروز: ${esc(faDate(todayD()))}</div>`:""); })() + `<a class="tile" href="#class" style="background:linear-gradient(135deg,#fff1e8,#eef4ff);margin-bottom:14px"><div class="ic">🧑‍🏫</div><b>کلاس من: طرح درس امروز</b><span>شرایط کلاس و بچه‌ها را انتخاب کنید تا تحلیل علمی، راهکار رفتاری و طرح درس کامل بگیرید.</span></a>` + _home().replace('<div class="grid">', `<div class="grid"><a class="tile" href="#calendar"><div class="ic">📅</div><b>تقویم و مناسبت‌ها</b><span>شمسی، میلادی، قمری + طرح درس مناسبتی</span></a><a class="tile" href="#growth"><div class="ic">🎓</div><b>رشد حرفه‌ای من</b><span>برنامه‌ی ۱۲ هفته‌ای، روزی ۳۰ دقیقه</span></a><a class="tile" href="#news"><div class="ic">🗞️</div><b>اخبار روز</b><span>تازه‌ترین مقاله‌های دنیا، هر روز</span></a><a class="tile" href="#songs"><div class="ic">🎵</div><b>آهنگ‌ها</b><span>آهنگ‌های کلاس با لینک</span></a>`);
+RENDER.home = ()=> (()=>{ const u=PF?upcoming(todayD(),14):[]; return u.length?`<div class="ok" style="margin-bottom:12px">📅 امروز: ${esc(faDate(todayD()))}<br><b>${u[0].o.ic} مناسبت پیش رو: ${esc(u[0].o.fa)} (${esc(relDay(u[0].d))})</b> <button class="ghost" style="margin:6px 0 0" data-planfor="${iso(u[0].d)}" data-planocc="${u[0].o.id}">طرح درس این مناسبت</button></div>`:(PF?`<div class="ok" style="margin-bottom:12px">📅 امروز: ${esc(faDate(todayD()))}</div>`:""); })() + `<a class="tile" href="#class" style="background:linear-gradient(135deg,#fff1e8,#eef4ff);margin-bottom:14px"><div class="ic">🧑‍🏫</div><b>کلاس من: طرح درس امروز</b><span>شرایط کلاس و بچه‌ها را انتخاب کنید تا تحلیل علمی، راهکار رفتاری و طرح درس کامل بگیرید.</span></a>` + _home().replace('<div class="grid">', `<div class="grid"><a class="tile" href="#ad"><div class="ic">📣</div><b>تبلیغات کلاس من</b><span>پوستر و متن برای اینستاگرام، واتساپ و تلگرام</span></a><a class="tile" href="#play"><div class="ic">🧸</div><b>بازی‌درمانی</b><span>بازی‌های درمانی، جعبه‌ابزار، فرم مشاهده</span></a><a class="tile" href="#calendar"><div class="ic">📅</div><b>تقویم و مناسبت‌ها</b><span>شمسی، میلادی، قمری + طرح درس مناسبتی</span></a><a class="tile" href="#growth"><div class="ic">🎓</div><b>رشد حرفه‌ای من</b><span>برنامه‌ی ۱۲ هفته‌ای، روزی ۳۰ دقیقه</span></a><a class="tile" href="#news"><div class="ic">🗞️</div><b>اخبار روز</b><span>تازه‌ترین مقاله‌های دنیا، هر روز</span></a><a class="tile" href="#songs"><div class="ic">🎵</div><b>آهنگ‌ها</b><span>آهنگ‌های کلاس با لینک</span></a>`);
 const vi = k=>VIEWS.findIndex(v=>v[0]===k);
-VIEWS.splice(vi("home")+1,0,["class","🧑‍🏫 کلاس من"],["growth","🎓 رشد من"],["calendar","📅 تقویم"]);
+VIEWS.splice(vi("home")+1,0,["class","🧑‍🏫 کلاس من"],["growth","🎓 رشد من"],["calendar","📅 تقویم"],["ad","📣 تبلیغات"]);
 VIEWS.splice(vi("finland")+1,0,["songs","🎵 آهنگ‌ها"],["news","🗞️ اخبار روز"]);
+VIEWS.splice(vi("needs")+1,0,["play","🧸 بازی‌درمانی"]);
 const ai = vi("articles"); if(ai>=0) VIEWS[ai][1]="📚 دانش و رشد";
 document.getElementById("navbar").innerHTML = VIEWS.map(([k,l])=>`<a href="#${k}" data-k="${k}">${l}</a>`).join("");
 
@@ -1520,6 +1834,21 @@ document.addEventListener("click", async e=>{
  const kd = e.target.closest("[data-kid]");
  if(kd){ const k=cur().kids[+kd.dataset.kid]; const v=kd.dataset.v; k.traits=k.traits||[]; k.traits=k.traits.includes(v)?k.traits.filter(x=>x!==v):[...k.traits,v]; kd.classList.toggle("on"); save(); refreshPlan(); return; }
  const kdel = e.target.closest("[data-kiddel]"); if(kdel){ cur().kids.splice(+kdel.dataset.kiddel,1); save(); rerender(true); return; }
+ const af = e.target.closest("[data-adf]");
+ if(af){ const d=adGet(), k=af.dataset.adf, v=af.dataset.v;
+  if(af.dataset.m){ d[k]=d[k]||[]; d[k]=d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]; af.classList.toggle("on"); }
+  else { d[k]=v; af.parentElement.querySelectorAll("[data-adf]").forEach(x=>x.classList.toggle("on",x===af)); }
+  adSet(d); if(adOut){ document.getElementById("adOut").innerHTML=adOutHTML(d); adRender(); } return; }
+ const cp = e.target.closest("[data-copy]"); if(cp){ const el=document.getElementById(cp.dataset.copy); try{ await navigator.clipboard.writeText(el.textContent); cp.textContent="کپی شد ✓"; }catch(err){ const r=document.createRange(); r.selectNodeContents(el); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r); cp.textContent="متن انتخاب شد؛ Copy را بزنید"; } return; }
+ if(e.target.id==="adGo"){ adOut=true; document.getElementById("adOut").innerHTML=adOutHTML(adGet()); adRender(); setTimeout(()=>document.getElementById("adOut").scrollIntoView({behavior:"smooth",block:"start"}),80); return; }
+ if(e.target.id==="adAgain"||e.target.id==="adAgain2"){ const d=adGet(); d.v=(d.v||0)+1; adSet(d); const y=window.scrollY; document.getElementById("adOut").innerHTML=adOutHTML(d); adRender(); window.scrollTo({top:y,behavior:"instant"}); return; }
+ if(e.target.id==="adShare"){ const btn=e.target; try{ const blob = adBlob || await (await fetch(document.getElementById("adImg").src)).blob(); const file=new File([blob],"poster.png",{type:"image/png"}); if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:"پوستر کلاس"}); } else { btn.textContent="انگشتتان را روی پوستر نگه دارید و ذخیره را بزنید"; } }catch(err){ if(!(err && err.name==="AbortError")) btn.textContent="انگشتتان را روی پوستر نگه دارید و ذخیره را بزنید"; } return; }
+ if(e.target.id==="adAI"){ const s=await getSample(); const out=document.getElementById("adAIOut"); if(!s||!out) return; out.style.display="block"; out.textContent="در حال نوشتن…"; const d=adGet();
+  try{ const r=await s(`You are an expert Persian social media marketer for children's education in Iran. Write ONLY in Persian. Class details: ${JSON.stringify(d)}. Write: 3 different catchy Instagram captions (with emojis and hashtags), 3 short WhatsApp broadcast messages, 5 hook lines for reels, and 3 poster headline ideas. Warm, trustworthy, parent-focused; no exaggerated claims, no fake testimonials. Plain text with short headings.`,{modelTier:"default",cache:false,onText:({text})=>{out.textContent=text}}); out.textContent=r.text; }catch(err){ out.textContent="انجام نشد. کمی بعد دوباره امتحان کنید."; } return; }
+ const pg = e.target.closest("[data-ptgoal]"); if(pg){ ptGoal=pg.dataset.ptgoal; rerender(true); return; }
+ const pn = e.target.closest("[data-ptneed]"); if(pn){ ptNeed=pn.dataset.ptneed; rerender(true); return; }
+ const pd = e.target.closest("[data-ptdel]"); if(pd){ const n=ptNotes(); n.splice(+pd.dataset.ptdel,1); try{localStorage.setItem("ptnotes",JSON.stringify(n));}catch(x){} rerender(true); return; }
+ if(e.target.id==="ptSave"){ const note=document.getElementById("ptNote").value.trim(); if(!note){ document.getElementById("ptNote").focus(); return; } const n=ptNotes(); n.push({name:document.getElementById("ptName").value.trim(),game:document.getElementById("ptGame").value,theme:document.getElementById("ptTheme").value.trim(),note,date:faDate(todayD())}); try{localStorage.setItem("ptnotes",JSON.stringify(n));}catch(x){} rerender(true); return; }
  const dt = e.target.closest("[data-date]"); if(dt){ const c=cur(); c.date=dt.dataset.date; c.occ=""; save(); rerender(true); return; }
  const oc = e.target.closest("[data-occ]"); if(oc){ const c=cur(); c.occ = c.occ===oc.dataset.occ ? "" : oc.dataset.occ; if(c.occ && OCC_BY_ID[c.occ] && THEMES[OCC_BY_ID[c.occ].theme] && c.theme!==OCC_BY_ID[c.occ].theme){ c.theme=OCC_BY_ID[c.occ].theme; save(); rerender(true); return; } oc.parentElement.querySelectorAll("[data-occ]").forEach(x=>x.classList.toggle("on", x.dataset.occ===c.occ)); save(); refreshPlan(); return; }
  const cd = e.target.closest("[data-calday]"); if(cd){ calSel=cd.dataset.calday; rerender(true); return; }
@@ -1541,6 +1870,7 @@ document.addEventListener("click", async e=>{
   e.target.disabled=false; return; }
 });
 document.addEventListener("change", e=>{
+ if(e.target.dataset && e.target.dataset.adi!==undefined){ const d=adGet(); d[e.target.dataset.adi]=e.target.value; adSet(d); return; }
  if(e.target.id==="clsDate"){ const c=cur(); if(e.target.value){ c.date=e.target.value; c.occ=""; save(); rerender(true); } return; }
  const d=e.target.dataset||{};
  if(d.chk){ let st={}; try{ st=JSON.parse(localStorage.getItem("chk_"+d.chk)||"{}"); }catch(x){} st[d.i]=e.target.checked; try{ localStorage.setItem("chk_"+d.chk,JSON.stringify(st)); }catch(x){} return; }
@@ -1549,6 +1879,7 @@ document.addEventListener("change", e=>{
  if(e.target.id==="clsSel"){ ST.active=+e.target.value; showPlan=false; save(); rerender(); }
 });
 document.addEventListener("input", e=>{
+ if(e.target.dataset && e.target.dataset.adi!==undefined){ const d=adGet(); d[e.target.dataset.adi]=e.target.value; adSet(d); return; }
  if(e.target.id==="pdJournal"){ const s=pdState(); s.journal=e.target.value; pdSave(s); return; }
  if(e.target.dataset && e.target.dataset.note!==undefined){ cur().notes=e.target.value; save(); return; }
  if(e.target.id==="clsName"){ cur().name=e.target.value; save(); const o=document.querySelector(`#clsSel option[value="${ST.active}"]`); if(o) o.textContent=e.target.value; }
