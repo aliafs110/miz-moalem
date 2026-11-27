@@ -1811,12 +1811,277 @@ async function adRender(){
  const s=await getSample(); const b=document.getElementById("adAI"); if(s&&b) b.style.display="inline-block";
 }
 
+/* ===================== محتوای روزانه‌ی اینستاگرام ===================== */
+const WORD_FA = {colors:["قرمز","آبی","زرد","سبز","نارنجی","بنفش","صورتی","مشکی","سفید"],animals:["گربه","سگ","گاو","اردک","شیر","فیل","میمون","ماهی","پرنده"],fruits:["سیب","موز","پرتقال","انگور","هندوانه","توت‌فرنگی","گلابی","نان","شیر"],family:["مامان","بابا","خواهر","برادر","نوزاد","مادربزرگ","پدربزرگ","خانواده"],body:["سر","شانه‌ها","زانوها","انگشتان پا","چشم‌ها","گوش‌ها","بینی","دهان","دست‌ها","پاها"],numbers:["یک","دو","سه","چهار","پنج","شش","هفت","هشت","نه","ده"],weather:["آفتابی","بارانی","ابری","بادی","برفی","گرم","سرد","چتر"],clothes:["پیراهن","شلوار","لباس دخترانه","کفش","کلاه","جوراب","پالتو","دامن"],feelings:["خوشحال","غمگین","عصبانی","ترسیده","خسته","متعجب","هیجان‌زده"],transport:["ماشین","اتوبوس","قطار","هواپیما","قایق","دوچرخه","کامیون","هلیکوپتر"],shapes:["دایره","مربع","مثلث","مستطیل","ستاره","قلب"],toys:["توپ","عروسک","خرس عروسکی","ماشین","مکعب‌ها","بادبادک","پازل","بادکنک"]};
+const IG_TIPS = [
+ ["کودکتان را مجبور به گفتن کلمه نکنید","بچه‌ها اول مدتی فقط گوش می‌دهند. به این «دوره‌ی سکوت» می‌گویند و کاملاً طبیعی است. به‌جای «بگو apple!» فقط با لبخند بگویید: «This is an apple!»"],
+ ["روزی ۵ دقیقه کافی است","تکرار کوتاه و هر روزه از یک ساعت در هفته مؤثرتر است. یک آهنگ یا بازی ۵ دقیقه‌ای در روز معجزه می‌کند."],
+ ["اشتباه را مستقیم اصلاح نکنید","اگر کودک گفت «blue car is»، شما فقط بگویید: «Yes! A blue car!» شکل درست را بشنود، بدون اینکه احساس شکست کند."],
+ ["زبان را به کارهای روزمره گره بزنید","موقع لباس پوشیدن، غذا خوردن یا حمام چند کلمه‌ی انگلیسی بگویید: shoes, apple, water. زبان در زندگی واقعی ماندگار می‌شود."],
+ ["کارتون انگلیسی؟ بله، ولی کنار کودک","تماشای کوتاه و همراه با شما، با مکث و سؤال (What's this?) خیلی بیشتر از تماشای تنهایی یاد می‌دهد."],
+ ["تشویق تلاش، نه نتیجه","به‌جای «آفرین، باهوشی!» بگویید «چقدر تلاش کردی!» این کار ترس از اشتباه را کم می‌کند."],
+ ["آهنگ، بهترین معلم زبان کودک","ریتم و تکرار آهنگ‌ها کلمه‌ها را در حافظه‌ی کودک ماندگار می‌کند. یک آهنگ را یک هفته تکرار کنید."],
+ ["کودک خجالتی؟ عروسک کمک می‌کند","بچه‌های خجالتی با عروسک راحت‌تر حرف می‌زنند. یک عروسک «انگلیسی‌زبان» در خانه داشته باشید."],
+ ["مقایسه نکنید","هر کودک سرعت یادگیری خودش را دارد. مقایسه با بچه‌های دیگر انگیزه را از بین می‌برد."],
+ ["بازی کنید، درس ندهید","کودک زیر ۷ سال با بازی یاد می‌گیرد، نه با برگه و تکلیف. هر کلمه را یک بازی کنید."],
+ ["قصه‌ی شب به انگلیسی","هفته‌ای یکی دو شب یک کتاب تصویری ساده‌ی انگلیسی بخوانید. لازم نیست همه‌ی کلمه‌ها را ترجمه کنید."],
+ ["با بدن یاد بدهید","برای هر کلمه یک حرکت بسازید: jump، clap، sleep. بچه‌ها با حرکت سریع‌تر یاد می‌گیرند."]
+];
+const IG_MYTHS = [
+ ["زبان دوم باعث دیر زبان باز کردن کودک می‌شود","پژوهش‌ها نشان می‌دهد یادگیری زبان دوم باعث تأخیر یا اختلال زبانی نمی‌شود و حتی به رشد شناختی کمک می‌کند."],
+ ["بچه باید اول فارسی را کامل یاد بگیرد","مغز کودک توانایی یادگیری هم‌زمان دو زبان را دارد. فقط باید آموزش بازی‌گونه و بدون فشار باشد."],
+ ["هر چه زودتر خواندن و نوشتن، بهتر","در سنین پیش‌دبستانی، گوش دادن و حرف زدن مهم‌تر است. خواندن و نوشتن رسمی بعداً راحت‌تر و سریع‌تر یاد گرفته می‌شود."],
+ ["بچه‌ای که حرف نمی‌زند، یاد نمی‌گیرد","کودک مدتی فقط گوش می‌دهد و در ذهنش زبان را می‌سازد. درک همیشه جلوتر از گفتار است."],
+ ["کارتون انگلیسی به‌تنهایی کافی است","کودک زبان را بیشتر از تعامل واقعی یاد می‌گیرد تا از صفحه‌نمایش. تماشای همراه و گفتگو اثر را چند برابر می‌کند."],
+ ["کلاس زبان برای بچه‌ی پرانرژی مناسب نیست","کلاس‌های حرکتی و بازی‌محور دقیقاً برای بچه‌های پرانرژی طراحی شده‌اند. حرکت بخشی از یادگیری است."],
+ ["تلفظ معلم باید مثل بومی باشد تا کودک یاد بگیرد","تلفظ واضح و درست مهم است، ولی کیفیت تعامل، بازی و تکرار نقش بزرگ‌تری در یادگیری کودک دارد."],
+ ["کودک اوتیسم نمی‌تواند زبان دوم یاد بگیرد","بسیاری از بچه‌های اوتیسم با آموزش دیداری، ساختارمند و بر پایه‌ی علایقشان زبان دوم را هم یاد می‌گیرند."]
+];
+const IG_HOMEGAMES = [
+ ["کیسه‌ی رازآلود","چند وسیله در کیسه بگذارید. کودک لمس می‌کند و حدس می‌زند: What is it? It's a ball!"],
+ ["Simon Says","Simon says touch your nose! فقط وقتی Simon says گفته شد انجام بدهد. هم زبان است، هم تمرکز."],
+ ["شکار رنگ در خانه","Find something red! کودک در خانه می‌گردد و چیزی قرمز پیدا می‌کند."],
+ ["چی کم شده؟","۴ اسباب‌بازی بچینید، چشمش را ببندد، یکی را بردارید: What's missing?"],
+ ["رقص و ایست","آهنگ بگذارید، قطع کنید و بگویید: Freeze! بعد یک کلمه بپرسید."],
+ ["مغازه‌بازی","با میوه‌ها مغازه درست کنید: Can I have an apple, please? – Here you are!"],
+ ["قایم‌باشک عروسک","عروسک را قایم کنید: Is it under the table? Is it on the bed?"],
+ ["ادای حیوانات","Walk like an elephant! Jump like a frog! کودک ادا درمی‌آورد."],
+ ["لی‌لی اعداد","روی زمین عدد بنویسید: Jump on number three!"],
+ ["بازی رنگ‌آمیزی با دستور","Color the sun yellow! کودک طبق دستور انگلیسی رنگ می‌کند."]
+];
+const IG_BTS = [
+ ["آماده کردن کلاس امروز","فیلم کوتاه از چیدن کارت‌ها، عروسک‌ها و وسایل بازی، با یک آهنگ شاد."],
+ ["معرفی خودم","چند جمله: چند سال است با بچه‌ها کار می‌کنید، چرا بازی‌محور درس می‌دهید و چه چیزی را بیشتر از همه دوست دارید."],
+ ["وسایل جادویی کلاس ما","معرفی ۳ وسیله‌ی محبوب کلاس: عروسک انگلیسی‌زبان، کیسه‌ی رازآلود، کارت‌های رنگی."],
+ ["کاردستی این هفته","تایم‌لپس ساختن نمونه‌ی کاردستی کلاس."],
+ ["یک روز با معلم زبان کودک","از آماده‌سازی تا پایان کلاس در ۱۵ ثانیه (بدون چهره‌ی بچه‌ها)."],
+ ["چرا هوش‌های چندگانه؟","توضیح کوتاه: هر بچه از یک راه بهتر یاد می‌گیرد. ما هر کلمه را با آهنگ، حرکت، تصویر و بازی درس می‌دهیم."]
+];
+const IG_QA = [
+ ["از چه سنی کلاس زبان شروع کنیم؟","از ۳ سالگی، به شرط اینکه کلاس بازی‌محور و بدون فشار باشد."],
+ ["کلاس آنلاین برای بچه‌ی ۴ ساله جواب می‌دهد؟","اگر کوتاه (۲۰ تا ۳۰ دقیقه)، حرکتی و تعاملی باشد، بله. کنار کودک بودن والد هم کمک می‌کند."],
+ ["در خانه چطور تمرین کنیم؟","روزی ۵ دقیقه آهنگ یا بازی کافی است. پیام بعد از هر جلسه را دنبال کنید."],
+ ["بچه‌ام در کلاس حرف نمی‌زند، طبیعی است؟","بله. اول مدتی گوش می‌دهد. کم‌کم و با احساس امنیت شروع به گفتن می‌کند."],
+ ["کلاس برای بچه‌های ADHD مناسب است؟","کلاس حرکتی با فعالیت‌های کوتاه و متنوع برای این بچه‌ها خیلی مناسب است."],
+ ["پیشرفت را از کجا بفهمیم؟","از لغت‌ها و آهنگ‌هایی که کودک در خانه تکرار می‌کند و از گزارش‌های دوره‌ای معلم."]
+];
+const IG_POLLS = [["بچه‌ی شما کدام را بیشتر دوست دارد؟","🎵 آهنگ","🎲 بازی"],["کودکتان کارتون انگلیسی می‌بیند؟","بله","نه"],["بهترین زمان تمرین زبان در خانه؟","صبح","شب"],["کودکتان چند ساله است؟","۳ تا ۵","۵ تا ۷"],["قصه‌ی شب می‌خوانید؟","هر شب","گاهی"],["کلاس حضوری یا آنلاین؟","حضوری","آنلاین"],["کودکتان خجالتی است یا پرانرژی؟","خجالتی","پرانرژی"]];
+const IG_SCHED = {6:{type:"tip",fmt:"ریلز",t:"20:30"},0:{type:"word",fmt:"کاروسل",t:"20:30"},1:{type:"game",fmt:"ریلز",t:"20:30"},2:{type:"myth",fmt:"کاروسل",t:"20:30"},3:{type:"song",fmt:"ریلز",t:"20:30"},4:{type:"bts",fmt:"ریلز",t:"21:00"},5:{type:"qa",fmt:"پست تک‌عکس",t:"11:00"}};
+const IG_TYPE_FA = {tip:"💡 نکته برای والدین",word:"🔤 لغت‌های هفته",game:"🎲 بازی خانگی",myth:"❌✅ باور غلط و واقعیت",song:"🎵 آهنگ هفته",bts:"🎬 پشت صحنه",qa:"❓ پرسش و پاسخ",occ:"🎉 محتوای مناسبتی"};
+
+function igSettings(){ try{ return Object.assign({handle:"",style:"pastel"}, JSON.parse(localStorage.getItem("igset")||"{}")); }catch(e){ return {handle:"",style:"pastel"}; } }
+function igSetSave(s){ try{ localStorage.setItem("igset",JSON.stringify(s)); }catch(e){} }
+function igHandle(){ const s=igSettings(); const h=s.handle||adGet().instagram||""; return h?h.replace(/^@?/,"@"):""; }
+const dayIndex = d => Math.floor((d - mkDate(2024,0,1))/86400000);
+const igTags = (extra=[]) => ["#آموزش_زبان_کودک","#زبان_انگلیسی_کودک","#آموزش_بازی_محور","#کودک_و_زبان","#EnglishForKids", ...extra].slice(0,6).join(" ");
+
+function igDay(d){
+ const di=dayIndex(d), wk=Math.floor(di/7), wd=d.getDay(); const S=IG_SCHED[wd];
+ const themeKeys=Object.keys(THEMES); const tk=themeKeys[wk%themeKeys.length]; const T=THEMES[tk];
+ const MAJOR=new Set(["nowruz","sizdah","yalda","motherIR","fatherIR","childIR","teacherIR","mehr","chaharshanbe","fitr","winter","summer","earth","bookday","animalday","kindness"]);
+ const todayOcc=occasionsOn(d)[0]||null;
+ let occ=occasionsOn(addDays(d,1)).find(o=>MAJOR.has(o.id))||null;
+ if(!occ && todayOcc && todayOcc.calm) occ=todayOcc;
+ const h=igHandle(); const sign=h?`\n\n📩 ثبت‌نام و مشاوره: دایرکت یا ${h}`:"\n\n📩 برای ثبت‌نام و مشاوره دایرکت بدهید.";
+ let post;
+ if(occ && !occ.calm){
+  post={type:"occ",fmt:"کاروسل",time:S.t,title:`${occ.ic} ${occ.fa}`,hook:`${occ.fa} را با بچه‌ها به انگلیسی جشن بگیریم!`,
+   slides:[[`${occ.ic} ${occ.fa}`,"یک فعالیت انگلیسی ساده برای خانه 👇"],["کلمه‌های این مناسبت",occ.words.slice(0,6).join(" · ")],["جمله‌های کاربردی",occ.say.join("\n")],["فعالیت پیشنهادی",occ.act],["کاردستی",occ.craft]],
+   caption:`${occ.ic} ${occ.fa} نزدیک است!\nبا این فعالیت ساده، این مناسبت را با کودکتان به انگلیسی تجربه کنید:\n\n🔤 کلمه‌ها: ${occ.words.slice(0,6).join("، ")}\n🗣️ جمله‌ها: ${occ.say.join(" / ")}\n🎨 ${occ.craft}\n\nاین پست را برای دوستانی که کودک دارند بفرستید 💌${sign}\n\n${igTags(["#"+occ.fa.replace(/\s+/g,"_").replace(/[()\/]/g,"")])}`};
+ } else if(occ && occ.calm){
+  post={type:"occ",fmt:"پست تک‌عکس",time:S.t,title:`${occ.ic} ${occ.fa}`,hook:"مهربانی را با بچه‌ها تمرین کنیم",slides:[[`${occ.ic} ${occ.fa}`,"یک فعالیت آرام درباره‌ی مهربانی و تقسیم کردن با کودک"]],caption:`${occ.ic} ${occ.fa}\nدر این روزها می‌توانیم با بچه‌ها درباره‌ی مهربانی و تقسیم کردن حرف بزنیم: Let's share. Be kind.${sign}\n\n${igTags()}`};
+ } else if(S.type==="tip"){ const x=IG_TIPS[wk%IG_TIPS.length];
+  post={type:"tip",fmt:S.fmt,time:S.t,title:x[0],hook:`${x[0]} ❗`,slides:[[x[0],x[1]]],script:[`ثانیه‌ی ۰ تا ۳ (قلاب): رو به دوربین بگویید: «${x[0]}!» (متن روی صفحه هم همین)`,`ثانیه‌ی ۳ تا ۲۰: توضیح کوتاه: ${x[1]}`,"ثانیه‌ی ۲۰ تا ۲۵: «این ویدیو را برای مامان‌ها و باباهای دیگر هم بفرستید»"],
+   caption:`${x[0]} 👇\n\n${x[1]}\n\n💾 ذخیره کنید و برای دوستانتان بفرستید.${sign}\n\n${igTags(["#تربیت_کودک","#نکات_تربیتی"])}`};
+ } else if(S.type==="word"){ const fa=WORD_FA[tk]||[]; const idx=[0,1,2].map(i=>(wk*3+i)%T.vocab.length);
+  post={type:"word",fmt:S.fmt,time:S.t,title:`لغت‌های هفته: ${T.fa}`,hook:`۳ کلمه‌ی انگلیسی «${T.fa}» برای کودکتان`,slides:[[`${T.ic} لغت‌های هفته`,T.fa],...idx.map(i=>[T.vocab[i],fa[i]||""]),["بازی این هفته",T.game]],
+   caption:`${T.ic} لغت‌های این هفته: ${T.fa}\n\n${idx.map(i=>`🔤 ${T.vocab[i]} = ${fa[i]||""}`).join("\n")}\n\n🎲 بازی خانگی: ${T.game}\n🗣️ جمله: ${T.say[0]}\n\nاین هفته هر روز ۵ دقیقه با این کلمه‌ها بازی کنید و نتیجه را در کامنت بگویید 👇${sign}\n\n${igTags(["#لغت_انگلیسی"])}`};
+ } else if(S.type==="game"){ const x=IG_HOMEGAMES[wk%IG_HOMEGAMES.length];
+  post={type:"game",fmt:S.fmt,time:S.t,title:`بازی خانگی: ${x[0]}`,hook:`یک بازی ۵ دقیقه‌ای که کودکتان را انگلیسی‌زبان می‌کند 🎲`,slides:[[`🎲 ${x[0]}`,x[1]]],script:["ثانیه‌ی ۰ تا ۳: متن روی صفحه: «بازی ۵ دقیقه‌ای زبان در خانه 🎲»",`ثانیه‌ی ۳ تا ۲۰: اجرای بازی «${x[0]}» با وسایل (یا با عروسک به‌جای کودک)`,"ثانیه‌ی ۲۰ تا ۲۵: «امشب امتحان کنید و در کامنت بگویید چطور بود»"],
+   caption:`🎲 بازی خانگی این هفته: ${x[0]}\n\n${x[1]}\n\n⏱️ فقط ۵ دقیقه در روز کافی است.\n💌 برای دوستانتان بفرستید.${sign}\n\n${igTags(["#بازی_با_کودک","#بازی_آموزشی"])}`};
+ } else if(S.type==="myth"){ const x=IG_MYTHS[wk%IG_MYTHS.length];
+  post={type:"myth",fmt:S.fmt,time:S.t,title:"باور غلط یا واقعیت؟",hook:`❌ «${x[0]}»`,slides:[["باور غلط یا واقعیت؟ 🤔",`«${x[0]}»`],["❌ باور غلط",x[0]],["✅ واقعیت",x[1]],["شما چه فکر می‌کنید؟","در کامنت بنویسید 👇"]],
+   caption:`❌ باور غلط: ${x[0]}\n✅ واقعیت: ${x[1]}\n\nشما هم این را شنیده بودید؟ در کامنت بنویسید 👇\n💌 برای کسی که لازم دارد بفرستید.${sign}\n\n${igTags(["#باور_غلط","#والدین_آگاه"])}`};
+ } else if(S.type==="song"){ const ks=Object.keys(SONGS); const sk=ks[wk%ks.length]; const s=SONGS[sk];
+  post={type:"song",fmt:S.fmt,time:S.t,title:`آهنگ هفته: ${s.t}`,hook:`🎵 آهنگ این هفته برای خانه: ${s.t}`,slides:[[`🎵 آهنگ هفته`,s.t],["کاربرد",s.use]],script:["ثانیه‌ی ۰ تا ۳: متن روی صفحه: «آهنگ این هفته 🎵»",`ثانیه‌ی ۳ تا ۲۰: خودتان بخشی از آهنگ «${s.t}» را با حرکت دست بخوانید`,"ثانیه‌ی ۲۰ تا ۲۵: «با بچه‌ها در خانه بخوانید و ویدیویش را برایم بفرستید»"],songLink:yt(s.q),
+   caption:`🎵 آهنگ این هفته: ${s.t}\nبرای: ${s.use}\n\nاین آهنگ را یک هفته هر روز با کودکتان بخوانید، همراه با حرکت دست 👐\n💌 برای مامان‌ها و باباهای دیگر بفرستید.${sign}\n\n${igTags(["#آهنگ_کودکانه","#آهنگ_انگلیسی"])}`};
+ } else if(S.type==="bts"){ const x=IG_BTS[wk%IG_BTS.length];
+  post={type:"bts",fmt:S.fmt,time:S.t,title:x[0],hook:`${x[0]} ✨`,slides:[[x[0],x[1]]],script:[`ثانیه‌ی ۰ تا ۳: متن روی صفحه: «${x[0]}»`,`ثانیه‌ی ۳ تا ۲۰: ${x[1]}`,"ثانیه‌ی ۲۰ تا ۲۵: دعوت: «اگر دوست دارید کودکتان هم بیاید، دایرکت بدهید»"],
+   caption:`✨ ${x[0]}\n\n${x[1]}\n\nکلاس‌های ما بازی‌محور و بر اساس هوش‌های چندگانه است 🌈${sign}\n\n${igTags(["#کلاس_زبان_کودک"])}`};
+ } else { const x=IG_QA[wk%IG_QA.length];
+  post={type:"qa",fmt:S.fmt,time:S.t,title:"پرسش و پاسخ والدین",hook:`❓ ${x[0]}`,slides:[[`❓ ${x[0]}`,`✅ ${x[1]}`]],
+   caption:`❓ سؤال این هفته: ${x[0]}\n\n✅ ${x[1]}\n\nسؤال شما چیست؟ در کامنت یا دایرکت بپرسید تا هفته‌ی بعد جواب بدهم 👇${sign}\n\n${igTags(["#پرسش_و_پاسخ"])}`};
+ }
+ const fa=WORD_FA[tk]||[]; const wi=di%T.vocab.length; const poll=IG_POLLS[di%IG_POLLS.length];
+ const stories=[
+  {time:"08:30",title:"☀️ صبح بخیر + کلمه‌ی امروز",img:[`Word of the day`,`${T.vocab[wi]}`,`یعنی: ${fa[wi]||""}`],sticker:`استیکر Quiz: «${T.vocab[wi]} یعنی چه؟» با ۳ گزینه که یکی‌اش «${fa[wi]||""}» باشد.`},
+  {time:"13:00",title:"📊 نظرسنجی",img:["نظرسنجی",poll[0],`${poll[1]}  یا  ${poll[2]}`],sticker:`استیکر Poll با دو گزینه: «${poll[1]}» و «${poll[2]}»`},
+  {time:post.time==="11:00"?"11:15":"20:45",title:"📣 معرفی پست امروز",img:["پست جدید 👇",post.title,"بزن روی پست"],sticker:"پست امروز را با دکمه‌ی ارسال (هواپیمای کاغذی) و «Add to story» در استوری بگذارید + استیکر «پست جدید» یا فلش."},
+  {time:"22:00",title:wd===5?"❓ جعبه‌ی سؤال":"🌙 پشت صحنه یا شب بخیر",img:wd===5?["سؤال دارید؟","هر سؤالی درباره‌ی زبان کودک دارید بپرسید","👇"]:["Good night! 🌙","فردا با یک بازی جدید","منتظر باشید ✨"],sticker:wd===5?"استیکر Questions: «سؤالتان درباره‌ی آموزش زبان کودک چیست؟»":"یک عکس یا ویدیوی کوتاه از وسایل کلاس یا آماده‌سازی فردا (بدون چهره‌ی بچه‌ها)."}
+ ];
+ if(todayOcc && !todayOcc.calm) stories.splice(1,0,{time:"10:00",title:`${todayOcc.ic} ${todayOcc.fa}`,img:[`${todayOcc.ic} ${todayOcc.en}`,todayOcc.fa,todayOcc.say[0]],sticker:`استیکر Quiz یا Emoji slider + یکی از کلمه‌های مناسبت: ${todayOcc.words.slice(0,3).join(", ")}`});
+ const ad=adGet(); if(ad.start){ const sd=fromIso(ad.start); const left=Math.round((sd-d)/86400000); if(left>0 && left<=14) stories.splice(3,0,{time:"21:30",title:"⏳ شمارش معکوس ثبت‌نام",img:["⏳ شروع کلاس‌ها",`${faN(left)} روز دیگر`,"ظرفیت محدود است"],sticker:`استیکر Countdown با تاریخ ${adStartFa(ad)} و استیکر لینک یا «دایرکت بدهید».`}); }
+ return {d,post,stories,theme:T};
+}
+
+function drawCard(W,H,lines,styleKey,kicker){
+ const P=PAL[styleKey]||PAL.pastel; const cv=document.createElement("canvas"); cv.width=W; cv.height=H; cv.setAttribute("dir","rtl"); cv.style.display="none"; document.body.appendChild(cv);
+ const ctx=cv.getContext("2d"); try{ctx.direction="rtl";}catch(e){}
+ const g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,P.bg[0]); g.addColorStop(1,P.bg[1]); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+ const r=rng(lines.join("").length+W); for(let i=0;i<12;i++){ const side=i%3; const x=side===0?r()*W*0.1:side===1?W-r()*W*0.1:r()*W; const y=side===2?(r()<0.5?r()*H*0.08:H-r()*H*0.12):r()*H; const c=P.deco[i%P.deco.length]; if(i%2) star(ctx,x,y,12+r()*24,c); else { ctx.globalAlpha=0.5; ctx.fillStyle=c; ctx.beginPath(); ctx.arc(x,y,10+r()*22,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; } }
+ const tColor=styleKey==="chic"?"#ffffff":P.ink; ctx.textAlign="center"; ctx.textBaseline="middle";
+ const M=W*0.1; const card={x:M*0.7,y:H*0.18,w:W-M*1.4,h:H*0.62};
+ ctx.fillStyle=P.card; ctx.globalAlpha=0.93; rr(ctx,card.x,card.y,card.w,card.h,W*0.05); ctx.fill(); ctx.globalAlpha=1;
+ if(kicker){ ctx.font=`700 ${Math.round(W*0.04)}px ${PFONT}`; const kw=ctx.measureText(kicker).width+W*0.08; ctx.fillStyle=P.acc; rr(ctx,(W-kw)/2,card.y-W*0.04,kw,W*0.08,W*0.04); ctx.fill(); ctx.fillStyle="#fff"; ctx.fillText(kicker,W/2,card.y); }
+ const sizes=[0.075,0.06,0.045], weights=[900,800,600];
+ function lay(s,draw){ let y=card.y+W*0.1; lines.forEach((t,i)=>{ const k=Math.min(i,2); ctx.font=`${weights[k]} ${Math.round(W*sizes[k]*s)}px ${/^[A-Za-z]/.test(t)?"Nunito, ":""}${PFONT}`; String(t).split("\n").forEach(par=>{ wrapLines(ctx,par,card.w-W*0.1).forEach(l=>{ if(draw){ ctx.fillStyle=i===1?P.acc2:P.ink; if(i===0) ctx.fillStyle=P.ink; const lt=/^[A-Za-z0-9"'(]/.test(l.replace(/^[^A-Za-z\u0600-\u06FF]+/,"")); ctx.save(); try{ ctx.direction=lt?"ltr":"rtl"; }catch(x){} ctx.fillText(l,W/2,y); ctx.restore(); } y+=W*sizes[k]*s*1.5; }); }); y+=W*0.03*s; }); return y; }
+ let s=1.3; while(s>0.5 && lay(s,false)>card.y+card.h-W*0.05) s-=0.05;
+ const used=lay(s,false)-card.y; ctx.save(); ctx.translate(0,Math.max(0,(card.h-used)/2-W*0.03)); lay(s,true); ctx.restore();
+ const h=igHandle(); ctx.font=`700 ${Math.round(W*0.04)}px Nunito, ${PFONT}`; ctx.fillStyle=tColor; ctx.save(); try{ctx.direction="ltr";}catch(e){} ctx.fillText(h||"English for Kids 🌈",W/2,H-H*0.08); ctx.restore();
+ ctx.font=`900 ${Math.round(W*0.06)}px Nunito, ${PFONT}`; [["A",0.14,"#e8505b"],["B",0.26,"#3d8bfd"],["C",0.38,"#2fb380"]].forEach(([l,x,c],i)=>{ ctx.save(); ctx.translate(W*x,H*0.08); ctx.rotate((i-1)*0.2); ctx.fillStyle=styleKey==="chic"?"#fff":c; ctx.fillText(l,0,0); ctx.restore(); });
+ cv.remove(); return cv.toDataURL("image/png");
+}
+
+let igSel=null;
+function viewIG(){
+ const t=todayD(); if(!igSel) igSel=iso(t); const set=igSettings();
+ const D=igDay(fromIso(igSel)); const P=D.post;
+ let done={}; try{ done=JSON.parse(localStorage.getItem("igdone")||"{}"); }catch(e){}
+ const strip=[...Array(7)].map((_,i)=>{ const d=addDays(t,i); const x=igDay(d); return `<button class="chip ${iso(d)===igSel?"on":""}" data-igday="${iso(d)}">${done[iso(d)]?"✅ ":""}${i===0?"امروز":i===1?"فردا":FA_WD[d.getDay()]} · ${IG_TYPE_FA[x.post.type].split(" ")[0]}</button>`; }).join("");
+ return `<h2>📷 محتوای روزانه‌ی اینستاگرام</h2><p class="lead">هر روز یک پست یا ریلز و ۴ استوری آماده، با تصویر، کپشن، هشتگ و ساعت پیشنهادی انتشار. محتوا هر روز خودکار عوض می‌شود و با مناسبت‌های تقویم هماهنگ است.</p>
+ <details><summary>⚙️ تنظیمات صفحه</summary><div><label>آیدی اینستاگرام (روی تصویرها می‌آید)</label><input type="text" id="igHandle" value="${esc(set.handle||adGet().instagram||"")}" placeholder="@..."><label>سبک تصویرها</label><div class="chips">${AD_STYLES.map(([k,l])=>`<button class="chip ${set.style===k?"on":""}" data-igstyle="${k}">${l}</button>`).join("")}</div></div></details>
+ ${viewMP()}
+ <h3>📅 محتوای آماده‌ی هر روز</h3>
+ <div class="chips">${strip}</div>
+ <div class="card" style="background:linear-gradient(135deg,#fff1e8,#eef4ff)"><h3 style="margin-top:0">${esc(faDate(D.d))}</h3>
+ <div class="facts"><div class="fact"><b>محتوای امروز</b>${IG_TYPE_FA[P.type]}</div><div class="fact"><b>قالب</b>${esc(P.fmt)}</div><div class="fact"><b>⏰ ساعت انتشار پست</b>${faN(P.time)}</div></div>
+ <label style="font-weight:400;margin-top:10px"><input type="checkbox" data-igdone="${igSel}" ${done[igSel]?"checked":""}> امروز را منتشر کردم</label></div>
+
+ <div class="card tint" style="--c:#d65db1"><h3 style="margin-top:0">${P.fmt==="ریلز"?"🎥 ریلز امروز":P.fmt==="کاروسل"?"🖼️ کاروسل امروز":"🖼️ پست امروز"}: ${esc(P.title)}</h3>
+ <p><b>جمله‌ی قلاب (۳ ثانیه‌ی اول یا اسلاید اول):</b> ${esc(P.hook)}</p>
+ ${P.script?`<h4>🎬 سناریوی ویدیو (حداکثر ۲۵ ثانیه)</h4><ol style="padding-right:20px;margin:4px 0">${P.script.map(s=>`<li>${esc(s)}</li>`).join("")}</ol><p style="font-size:13px;color:var(--muted)">تصویر زیر را به‌عنوان کاور (Cover) ریلز استفاده کنید. ویدیو را با نور طبیعی و گوشی عمودی بگیرید.</p>`:""}
+ ${P.songLink?`<p>${linkA("🎵 پیدا کردن آهنگ در یوتیوب",P.songLink)}</p>`:""}
+ <h4>${P.fmt==="کاروسل"?`🖼️ اسلایدها (${faN(P.slides.length)} تصویر؛ به همین ترتیب بارگذاری کنید)`:"🖼️ تصویر"}</h4>
+ <div class="igimgs" data-igimgs="post"></div>
+ <p style="font-size:13px;color:var(--muted)">برای ذخیره انگشتتان را روی هر تصویر نگه دارید و «ذخیره» را بزنید.</p>
+ <h4>✍️ کپشن</h4>${copyBox("igcap",P.caption)}</div>
+
+ <div class="card tint" style="--c:#3d8bfd"><h3 style="margin-top:0">📱 استوری‌های امروز</h3>
+ ${D.stories.map((s,i)=>`<div class="act"><div class="t">⏰ ${faN(s.time)} · ${esc(s.title)}</div><div class="igimgs" data-igimgs="story${i}"></div><p style="font-size:14px">🏷️ ${esc(s.sticker)}</p></div>`).join("")}</div>
+
+ <details><summary>⏰ بهترین ساعت‌های انتشار</summary><div><ul class="clean">
+ <li><b>پست و ریلز:</b> شنبه تا چهارشنبه ساعت ۲۰:۳۰ تا ۲۲، پنجشنبه حدود ۲۱، جمعه صبح ۱۰ تا ۱۲. این ساعت‌ها زمانی است که والدین معمولاً بچه‌ها را خوابانده‌اند یا فراغت دارند.</li>
+ <li><b>استوری:</b> پخش در طول روز: صبح (۸:۳۰)، ظهر (۱۳)، بلافاصله بعد از پست (۲۰:۴۵) و آخر شب (۲۲).</li>
+ <li><b>مهم‌تر از همه:</b> این ساعت‌ها نقطه‌ی شروع‌اند. بعد از ۲ تا ۳ هفته در اینستاگرام به Professional dashboard بروید، بعد Total followers و Most active times. ساعتی را که مخاطبان خودتان فعال‌ترند جایگزین کنید.</li>
+ <li><b>نظم:</b> هر روز در ساعت ثابت منتشر کنید تا مخاطب عادت کند.</li></ul></div></details>
+ <details><summary>📈 اصول الگوریتم اینستاگرام (به‌روز)</summary><div><ul class="clean do">
+ <li><b>مدت تماشا</b> مهم‌ترین سیگنال است: ۳ ثانیه‌ی اول ریلز باید جمله‌ی قلاب داشته باشد. ریلز را کوتاه (۱۵ تا ۳۰ ثانیه) بسازید.</li>
+ <li><b>ارسال در دایرکت</b> برای دیده شدن توسط غیرفالوورها خیلی مهم است. محتوایی بسازید که والدین برای هم بفرستند: نکته، بازی خانگی، باور غلط. در آخر کپشن هم بنویسید «برای دوستانتان بفرستید».</li>
+ <li><b>لایک</b> بیشتر برای دیده شدن توسط فالوورهای فعلی مهم است. <b>ذخیره</b> هم نشانه‌ی محتوای ارزشمند است.</li>
+ <li><b>ریلز</b> برای جذب مخاطب جدید، <b>کاروسل</b> برای ذخیره و تعامل، و <b>استوری</b> برای صمیمیت با فالوورهای فعلی.</li>
+ <li><b>محتوای اصیل:</b> ویدیوی خودتان را بسازید. ویدیوی دیگران یا ویدیو با واترمارک اپ‌های دیگر کمتر دیده می‌شود.</li>
+ <li>در یک ساعت اول بعد از انتشار، به کامنت‌ها و دایرکت‌ها جواب بدهید.</li>
+ <li>۳ تا ۵ هشتگ مرتبط کافی است. کلمه‌های کلیدی (مثل «آموزش زبان کودک») را در متن کپشن هم بیاورید تا در جستجو پیدا شوید.</li></ul></div></details>
+ <details><summary>🔄 کارهای هفتگی برای به‌روز نگه داشتن پیج</summary><div>${checklist("igweek",["آمار هفته را ببینید: مدت تماشا، ارسال‌ها (Shares)، ذخیره‌ها و لایک نسبت به بازدید","پرطرفدارترین پست هفته را پین کنید یا ایده‌اش را دوباره با شکل تازه بسازید","هایلایت‌ها را به‌روز کنید: ثبت‌نام، کلاس ما، نظر والدین (واقعی و با اجازه)، سؤالات","به همه‌ی دایرکت‌ها و کامنت‌های معوق جواب بدهید","بیو و لینک ثبت‌نام را چک کنید (تاریخ شروع کلاس، ظرفیت)","ایده‌ها یا سؤال‌های جدید والدین را یادداشت کنید تا محتوای هفته‌ی بعد شوند"].map(esc))}</div></details>
+ <div class="warn" style="font-size:13px">عکس و فیلم بچه‌ها فقط با اجازه‌ی کتبی والدین منتشر شود. بهتر است چهره‌ها دیده نشوند.</div>`;
+}
+function igRenderImages(){
+ const box=document.querySelector('[data-igimgs="post"]'); if(!box) return;
+ const set=igSettings(); const D=igDay(fromIso(igSel)); const P=D.post;
+ const imgHTML=src=>`<img src="${src}" style="width:100%;max-width:320px;border-radius:12px;margin:6px auto;display:block;box-shadow:0 3px 12px rgba(0,0,0,.12)">`;
+ const sq = P.fmt==="ریلز"; // reel cover vertical
+ box.innerHTML = P.slides.map((s,i)=>imgHTML(drawCard(1080, sq?1920:1350, s, set.style, P.fmt==="کاروسل"?`${faN(i+1)} / ${faN(P.slides.length)}`:IG_TYPE_FA[P.type]))).join("");
+ D.stories.forEach((s,i)=>{ const b=document.querySelector(`[data-igimgs="story${i}"]`); if(b) b.innerHTML=imgHTML(drawCard(1080,1920,s.img,set.style,"")); });
+}
+
+/* ===================== عکس‌های خودم برای اینستاگرام ===================== */
+const MP_TOPICS = [["craft","🎨 کاردستی بچه‌ها"],["room","🏫 وسایل و چیدمان کلاس"],["game","🎲 بازی در کلاس"],["story","📖 کتاب و قصه"],["music","🎵 آهنگ و موسیقی"],["teacher","👩‍🏫 خودم (معلم)"],["occasion","🎉 مناسبت یا جشن"],["progress","⭐ پیشرفت و نتیجه‌ی کار"],["online","💻 کلاس آنلاین"],["kids","🧒 بچه‌ها در کلاس"]];
+const MP_FRAMES = [["none","بدون قاب"],["band","نوار پایین با آیدی"],["title","قاب رنگی با عنوان"]];
+let MP = {files:[], topic:"craft", theme:"", note:"", title:"", fmt:"post", frame:"band", v:0, out:false};
+function mpCaptions(){
+ const T = MP.theme && THEMES[MP.theme] ? THEMES[MP.theme] : null;
+ const h=igHandle(); const sign=h?`\n\n📩 ثبت‌نام و مشاوره: دایرکت یا ${h}`:"\n\n📩 برای ثبت‌نام و مشاوره دایرکت بدهید.";
+ const note = MP.note ? `\n\n${MP.note}` : "";
+ const words = T ? `\n🔤 کلمه‌های این جلسه: ${T.vocab.slice(0,5).join("، ")}` : "";
+ const th = T ? `«${T.fa}»` : "امروز";
+ const C = {
+  craft:[`🎨 کاردستی این هفته‌ی بچه‌ها با موضوع ${th}!${note}\nهر کاردستی برای ما یعنی چند کلمه‌ی جدید انگلیسی که با دست ساخته و با دل یاد گرفته می‌شود 💛${words}`,`دست‌های کوچک، ایده‌های بزرگ ✂️🎨${note}\nبچه‌ها در کلاس ما زبان را با ساختن، رنگ زدن و بازی یاد می‌گیرند.${words}`,`این کار بچه‌های ماست 😍 کدامش را بیشتر دوست دارید؟${note}${words}\n\nدر کامنت بگویید 👇`],
+  room:[`کلاس امروز آماده‌ی بچه‌هاست ✨${note}\nکارت‌ها، عروسک‌ها و کلی بازی برای یاد گرفتن ${th} 🌈${words}`,`پشت صحنه‌ی یک کلاس بازی‌محور 🧸${note}\nهر وسیله‌ای که می‌بینید، یک بازی و چند کلمه‌ی انگلیسی است.${words}`,`حدس بزنید امروز با این وسایل چه بازی‌ای داریم؟ 🤔${note}\nجواب را در کامنت بنویسید 👇${words}`],
+  game:[`🎲 بازی امروز کلاس!${note}\nوقتی یادگیری بازی باشد، بچه‌ها خودشان دنبالش می‌روند 🌈${words}`,`یاد گرفتن ${th} با بازی، خنده و حرکت 🤸${note}\nاین بازی را در خانه هم می‌توانید با کودکتان انجام دهید.${words}`,`در کلاس ما هیچ‌کس پشت میز نمی‌نشیند 😄${note}\nبازی و حرکت قلب آموزش زبان کودک است.${words}`],
+  story:[`📖 قصه‌ی امروز کلاس${note}\nقصه‌گویی یکی از بهترین راه‌های یاد گرفتن زبان برای بچه‌هاست.${words}`,`یک کتاب، یک عروسک و کلی کلمه‌ی جدید 📚🧸${note}\nهفته‌ای یکی دو قصه‌ی کوتاه انگلیسی در خانه معجزه می‌کند.${words}`,`کتاب مورد علاقه‌ی بچه‌های ما این روزها 📖💛${note}\nشما هم پیشنهادی دارید؟ کامنت کنید 👇`],
+  music:[`🎵 آهنگ این هفته‌ی کلاس!${note}\nآهنگ و حرکت، کلمه‌ها را در ذهن بچه‌ها ماندگار می‌کند.${words}`,`با آهنگ یاد بگیر، با حرکت به خاطر بسپار 🎶${note}${words}`,`آهنگی که بچه‌ها در خانه هم زمزمه می‌کنند 😍🎵${note}\nاگر کودکتان هم می‌خواند، ویدیویش را برایم بفرستید 💌`],
+  teacher:[`سلام! من معلم زبان انگلیسی کودک هستم 👩‍🏫🌈${note}\nکلاس‌های من بازی‌محور و بر اساس هوش‌های چندگانه است، چون باور دارم هر کودک از راه خودش بهتر یاد می‌گیرد.`,`چرا آموزش زبان به کودک را دوست دارم؟ 💛${note}\nچون هیچ چیز قشنگ‌تر از لحظه‌ای نیست که یک کودک اولین کلمه‌ی انگلیسی‌اش را با خنده می‌گوید.`,`پشت هر کلاس شاد، ساعت‌ها آماده‌سازی است ✨${note}\nاز آماده کردن کارت‌ها تا طراحی بازی‌ها، همه برای یک لبخند.`],
+  occasion:[`🎉 جشن امروز کلاس ما!${note}\nمناسبت‌ها بهترین فرصت برای یاد گرفتن کلمه‌های تازه‌اند.${words}`,`یک روز خاص، یک کلاس خاص 💛${note}${words}`,`بچه‌ها امروز حسابی شاد بودند 🥳${note}\nشما این مناسبت را چطور با بچه‌ها جشن می‌گیرید؟ 👇`],
+  progress:[`⭐ پیشرفت بچه‌های ما!${note}\nهر کلمه‌ی جدید یک قدم بزرگ است و ما به همه‌ی قدم‌ها افتخار می‌کنیم 💛`,`از «سکوت» تا «Hello!» 😍${note}\nیادگیری زبان در کودکی قدم‌به‌قدم و با صبر اتفاق می‌افتد.`,`این نتیجه‌ی چند هفته بازی و آهنگ است 🌈${note}\nبه بچه‌ها افتخار می‌کنیم!`],
+  online:[`💻 کلاس آنلاین هم می‌تواند پر از بازی و حرکت باشد!${note}\nکلاس‌های آنلاین ما کوتاه، شاد و تعاملی است.${words}`,`از خانه، با خنده، به انگلیسی 🏠🎈${note}${words}`,`بازی «Bring me!» در کلاس آنلاین امروز 😄${note}\nبچه‌ها از خانه وسیله می‌آورند و به انگلیسی معرفی می‌کنند.`],
+  kids:[`لحظه‌های شاد کلاس ما 💛${note}\nبچه‌ها زبان را با بازی، آهنگ و دوستی یاد می‌گیرند.${words}`,`یاد گرفتن با هم، قشنگ‌تر است 🤝${note}${words}`,`این‌جا هر کودک دیده می‌شود 🌈${note}\nکلاس‌های کم‌جمعیت یعنی توجه بیشتر به هر کودک.`]
+ };
+ const tagsExtra = {craft:["#کاردستی_کودک"],room:["#کلاس_زبان_کودک"],game:["#بازی_آموزشی"],story:["#قصه_کودک"],music:["#آهنگ_کودکانه"],teacher:["#معلم_زبان"],occasion:["#جشن_کلاس"],progress:["#پیشرفت_کودک"],online:["#کلاس_آنلاین_کودک"],kids:["#کلاس_زبان_کودک"]}[MP.topic]||[];
+ const arr=C[MP.topic]||C.craft; const i=MP.v%arr.length;
+ const caps=[0,1,2].map(k=>arr[(i+k)%arr.length]+`\n\n💌 برای دوستانی که کودک دارند بفرستید.`+sign+`\n\n`+igTags(tagsExtra));
+ const story={text: MP.title || ({craft:"کاردستی امروز 🎨",room:"کلاس آماده‌ست ✨",game:"بازی امروز 🎲",story:"قصه‌ی امروز 📖",music:"آهنگ این هفته 🎵",teacher:"سلام! 👋",occasion:"جشن کلاس 🎉",progress:"افتخار می‌کنیم ⭐",online:"کلاس آنلاین 💻",kids:"لحظه‌های شاد 💛"}[MP.topic]),
+  sticker:({craft:"استیکر Emoji slider: «چقدر دوستش داشتید؟ 😍»",room:"استیکر Quiz: «حدس بزنید امروز چه بازی‌ای داریم؟»",game:"استیکر Poll: «در خانه امتحانش می‌کنید؟ بله / حتماً!»",story:"استیکر Questions: «کتاب مورد علاقه‌ی کودکتان؟»",music:"استیکر Music (همان آهنگ) + Poll",teacher:"استیکر Questions: «هر سؤالی دارید بپرسید»",occasion:"استیکر Emoji slider 🎉",progress:"استیکر Emoji slider 👏",online:"استیکر Poll: «حضوری یا آنلاین؟»",kids:"استیکر Emoji slider 💛"}[MP.topic])};
+ const wd=todayD().getDay(); const time = wd===5?"۱۱:۰۰ (جمعه صبح)":"۲۰:۳۰ تا ۲۲:۰۰";
+ return {caps, story, time};
+}
+function mpDraw(img){
+ const W=1080, H=MP.fmt==="story"?1920:1350; const cv=document.createElement("canvas"); cv.width=W; cv.height=H; cv.setAttribute("dir","rtl"); cv.style.display="none"; document.body.appendChild(cv);
+ const ctx=cv.getContext("2d"); try{ctx.direction="rtl";}catch(e){}
+ const st=igSettings().style; const P=PAL[st]||PAL.pastel;
+ const pad = MP.frame==="title" ? 50 : 0; const top = MP.frame==="title" ? 190 : 0; const bot = MP.frame==="none" ? 0 : 130;
+ if(MP.frame!=="none"){ const g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,P.bg[0]); g.addColorStop(1,P.bg[1]); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); }
+ const bx=pad, by=pad+top, bw=W-2*pad, bh=H-by-pad-bot;
+ const s=Math.max(bw/img.width, bh/img.height); const sw=bw/s, sh=bh/s; const sx=(img.width-sw)/2, sy=(img.height-sh)/2;
+ ctx.save(); if(MP.frame==="title"){ rr(ctx,bx,by,bw,bh,40); ctx.clip(); } ctx.drawImage(img,sx,sy,sw,sh,bx,by,bw,bh); ctx.restore();
+ ctx.textAlign="center"; ctx.textBaseline="middle";
+ if(MP.frame==="title"){ ctx.fillStyle=st==="chic"?"#fff":P.ink; ctx.font=`900 64px ${PFONT}`; const t=MP.title||mpCaptions().story.text; wrapLines(ctx,t,W-120).slice(0,2).forEach((l,i,a)=>ctx.fillText(l,W/2,top/2+pad/2+(i-(a.length-1)/2)*72)); [["A",0.08,"#e8505b"],["B",0.92,"#3d8bfd"]].forEach(([l,x,c])=>{ ctx.font=`900 60px Nunito, ${PFONT}`; ctx.fillStyle=st==="chic"?"#fff":c; ctx.fillText(l,W*x,top/2+pad/2); }); }
+ if(MP.frame!=="none"){ ctx.fillStyle=st==="chic"?P.acc:P.ink; ctx.fillRect(0,H-bot,W,bot); ctx.fillStyle=st==="chic"?P.ink:"#fff"; ctx.font=`700 42px Nunito, ${PFONT}`; ctx.save(); try{ctx.direction="ltr";}catch(e){} ctx.fillText((igHandle()||"English for Kids")+"  🌈",W/2,H-bot/2); ctx.restore(); }
+ cv.remove(); return cv.toDataURL("image/jpeg",0.92);
+}
+function mpLoad(file){ return new Promise((res,rej)=>{ const u=URL.createObjectURL(file); const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=u; }); }
+function viewMP(){
+ const chipsM=(k,opts)=>`<div class="chips">${opts.map(([v,l])=>`<button class="chip ${MP[k]===v?"on":""}" data-mp="${k}" data-v="${v}">${l}</button>`).join("")}</div>`;
+ return `<div class="card tint" style="--c:#f0a020" id="mpCard"><h3 style="margin-top:0">📤 عکس‌های خودم</h3>
+ <p style="font-size:14px;margin-top:0">عکس خودتان را بارگذاری کنید تا در اندازه‌ی پست یا استوری با قاب و آیدی آماده شود و کپشن و متن استوری پیشنهادی بگیرید. برای کاروسل می‌توانید چند عکس را با هم انتخاب کنید.</p>
+ <label>انتخاب عکس</label><input type="file" id="mpFile" accept="image/*" multiple>
+ <p style="font-size:13px;color:var(--muted);margin:4px 0">${MP.files.length?`✅ ${faN(MP.files.length)} عکس انتخاب شده`:"هنوز عکسی انتخاب نشده"}</p>
+ <label>این عکس درباره‌ی چیست؟</label>${chipsM("topic",MP_TOPICS)}
+ <label>موضوع درس (اختیاری)</label><div class="chips"><button class="chip ${!MP.theme?"on":""}" data-mp="theme" data-v="">هیچ‌کدام</button>${Object.entries(THEMES).map(([k,t])=>`<button class="chip ${MP.theme===k?"on":""}" data-mp="theme" data-v="${k}">${t.ic} ${t.fa}</button>`).join("")}</div>
+ <label>یک توضیح کوتاه از خودتان (اختیاری)</label><input type="text" id="mpNote" value="${esc(MP.note)}" placeholder="مثلاً: بچه‌ها امروز با برگ‌های پاییزی تاج ساختند">
+ <label>قالب</label>${chipsM("fmt",[["post","📷 پست (۴:۵)"],["story","📱 استوری (۹:۱۶)"]])}
+ <label>قاب</label>${chipsM("frame",MP_FRAMES)}
+ ${MP.frame==="title"?`<label>عنوان روی عکس</label><input type="text" id="mpTitle" value="${esc(MP.title)}" placeholder="مثلاً: کاردستی پاییزی 🍂">`:""}
+ ${MP.topic==="kids"?`<div class="warn" style="margin-top:8px">⚠️ قبل از انتشار عکس بچه‌ها، اجازه‌ی کتبی والدین را بگیرید. بهتر است چهره‌ها با استیکر یا ایموجی پوشانده شوند.</div>`:""}
+ <button class="go" id="mpGo">✨ آماده کن</button>
+ <div id="mpOut"></div></div>`;
+}
+async function mpRun(){
+ const out=document.getElementById("mpOut"); if(!out) return;
+ if(!MP.files.length){ out.innerHTML=`<p class="warn">اول عکس را انتخاب کنید.</p>`; return; }
+ out.innerHTML=`<div class="out">در حال آماده‌سازی…</div>`;
+ const R=mpCaptions(); let imgs=[];
+ for(const f of MP.files.slice(0,10)){ try{ const im=await mpLoad(f); imgs.push(mpDraw(im)); }catch(e){} }
+ const imgHTML=src=>`<img src="${src}" style="width:100%;max-width:320px;border-radius:12px;margin:6px auto;display:block;box-shadow:0 3px 12px rgba(0,0,0,.12)">`;
+ out.innerHTML=`<h4>🖼️ عکس‌های آماده (${faN(imgs.length)})</h4>${imgs.map(imgHTML).join("")}<p style="font-size:13px;color:var(--muted)">برای ذخیره انگشتتان را روی هر عکس نگه دارید.${imgs.length>1?" برای کاروسل به همین ترتیب بارگذاری کنید.":""}</p>
+ <p><b>⏰ ساعت پیشنهادی انتشار امروز:</b> ${R.time}</p>
+ ${R.caps.map((c,i)=>`<h4>✍️ کپشن پیشنهادی ${faN(i+1)}</h4>${copyBox("mpc"+i,c)}`).join("")}
+ <button class="ghost" id="mpMore">🔄 کپشن‌های دیگر</button>
+ <h4>📱 اگر استوری می‌کنید</h4><p>متن روی استوری: <b>${esc(R.story.text)}</b></p><p style="font-size:14px">🏷️ ${esc(R.story.sticker)}</p>
+ <button class="ghost" id="mpAI" style="display:none">🤖 کپشن اختصاصی با دیدن عکس (هوش مصنوعی)</button><div class="out" id="mpAIOut" style="display:none"></div>`;
+ const s=await getSample(); if(s){ try{ const lim=s.limits?await s.limits():null; if(lim && lim.images){ const b=document.getElementById("mpAI"); if(b) b.style.display="inline-block"; } }catch(e){} }
+}
+async function mpAI(){
+ const s=await getSample(); const out=document.getElementById("mpAIOut"); if(!s||!out) return; out.style.display="block"; out.textContent="در حال دیدن عکس و نوشتن…";
+ try{ const r=await s(`You are a Persian Instagram content writer for a preschool English teacher (kids 3-7) in Iran. Look at the attached photo(s). Write ONLY in Persian: 1) a short description of what you see, 2) three different engaging captions (warm, parent-focused, with emojis, ending with a call to share/DM and 5 relevant hashtags), 3) one on-image story text, 4) a story sticker idea. If children's faces are clearly visible, add a gentle reminder to get written parental consent or cover faces. Teacher's note: ${MP.note||"-"}. Topic: ${(MP_TOPICS.find(t=>t[0]===MP.topic)||["",""])[1]}. Instagram handle: ${igHandle()||"-"}. Plain text.`,{images:MP.files.slice(0,4),modelTier:"default",cache:false,onText:({text})=>{out.textContent=text}}); out.textContent=r.text; }
+ catch(err){ out.textContent=err&&err.code==="rate_limited"?"کمی صبر کنید و دوباره امتحان کنید.":"انجام نشد. کمی بعد دوباره امتحان کنید."; }
+}
+
 /* ---------- wiring ---------- */
-RENDER.class = viewClass; RENDER.songs = viewSongs; RENDER.news = viewNews; RENDER.growth = viewGrowth; RENDER.calendar = viewCalendar; RENDER.play = viewPlay; RENDER.ad = ()=>{ if(adOut) setTimeout(adRender,30); return viewAd(); };
+RENDER.class = viewClass; RENDER.songs = viewSongs; RENDER.news = viewNews; RENDER.growth = viewGrowth; RENDER.calendar = viewCalendar; RENDER.play = viewPlay; RENDER.ig = ()=>{ setTimeout(()=>{ igRenderImages(); if(MP.out) mpRun(); },30); return viewIG(); }; RENDER.ad = ()=>{ if(adOut) setTimeout(adRender,30); return viewAd(); };
 const _home = RENDER.home;
-RENDER.home = ()=> (()=>{ const u=PF?upcoming(todayD(),14):[]; return u.length?`<div class="ok" style="margin-bottom:12px">📅 امروز: ${esc(faDate(todayD()))}<br><b>${u[0].o.ic} مناسبت پیش رو: ${esc(u[0].o.fa)} (${esc(relDay(u[0].d))})</b> <button class="ghost" style="margin:6px 0 0" data-planfor="${iso(u[0].d)}" data-planocc="${u[0].o.id}">طرح درس این مناسبت</button></div>`:(PF?`<div class="ok" style="margin-bottom:12px">📅 امروز: ${esc(faDate(todayD()))}</div>`:""); })() + `<a class="tile" href="#class" style="background:linear-gradient(135deg,#fff1e8,#eef4ff);margin-bottom:14px"><div class="ic">🧑‍🏫</div><b>کلاس من: طرح درس امروز</b><span>شرایط کلاس و بچه‌ها را انتخاب کنید تا تحلیل علمی، راهکار رفتاری و طرح درس کامل بگیرید.</span></a>` + _home().replace('<div class="grid">', `<div class="grid"><a class="tile" href="#ad"><div class="ic">📣</div><b>تبلیغات کلاس من</b><span>پوستر و متن برای اینستاگرام، واتساپ و تلگرام</span></a><a class="tile" href="#play"><div class="ic">🧸</div><b>بازی‌درمانی</b><span>بازی‌های درمانی، جعبه‌ابزار، فرم مشاهده</span></a><a class="tile" href="#calendar"><div class="ic">📅</div><b>تقویم و مناسبت‌ها</b><span>شمسی، میلادی، قمری + طرح درس مناسبتی</span></a><a class="tile" href="#growth"><div class="ic">🎓</div><b>رشد حرفه‌ای من</b><span>برنامه‌ی ۱۲ هفته‌ای، روزی ۳۰ دقیقه</span></a><a class="tile" href="#news"><div class="ic">🗞️</div><b>اخبار روز</b><span>تازه‌ترین مقاله‌های دنیا، هر روز</span></a><a class="tile" href="#songs"><div class="ic">🎵</div><b>آهنگ‌ها</b><span>آهنگ‌های کلاس با لینک</span></a>`);
+RENDER.home = ()=> (()=>{ const u=PF?upcoming(todayD(),14):[]; return u.length?`<div class="ok" style="margin-bottom:12px">📅 امروز: ${esc(faDate(todayD()))}<br><b>${u[0].o.ic} مناسبت پیش رو: ${esc(u[0].o.fa)} (${esc(relDay(u[0].d))})</b> <button class="ghost" style="margin:6px 0 0" data-planfor="${iso(u[0].d)}" data-planocc="${u[0].o.id}">طرح درس این مناسبت</button></div>`:(PF?`<div class="ok" style="margin-bottom:12px">📅 امروز: ${esc(faDate(todayD()))}</div>`:""); })() + `<a class="tile" href="#class" style="background:linear-gradient(135deg,#fff1e8,#eef4ff);margin-bottom:14px"><div class="ic">🧑‍🏫</div><b>کلاس من: طرح درس امروز</b><span>شرایط کلاس و بچه‌ها را انتخاب کنید تا تحلیل علمی، راهکار رفتاری و طرح درس کامل بگیرید.</span></a>` + _home().replace('<div class="grid">', `<div class="grid"><a class="tile" href="#ig"><div class="ic">📷</div><b>محتوای روزانه‌ی اینستاگرام</b><span>پست، ریلز و استوری آماده‌ی هر روز + ساعت انتشار</span></a><a class="tile" href="#ad"><div class="ic">📣</div><b>تبلیغات کلاس من</b><span>پوستر و متن برای اینستاگرام، واتساپ و تلگرام</span></a><a class="tile" href="#play"><div class="ic">🧸</div><b>بازی‌درمانی</b><span>بازی‌های درمانی، جعبه‌ابزار، فرم مشاهده</span></a><a class="tile" href="#calendar"><div class="ic">📅</div><b>تقویم و مناسبت‌ها</b><span>شمسی، میلادی، قمری + طرح درس مناسبتی</span></a><a class="tile" href="#growth"><div class="ic">🎓</div><b>رشد حرفه‌ای من</b><span>برنامه‌ی ۱۲ هفته‌ای، روزی ۳۰ دقیقه</span></a><a class="tile" href="#news"><div class="ic">🗞️</div><b>اخبار روز</b><span>تازه‌ترین مقاله‌های دنیا، هر روز</span></a><a class="tile" href="#songs"><div class="ic">🎵</div><b>آهنگ‌ها</b><span>آهنگ‌های کلاس با لینک</span></a>`);
 const vi = k=>VIEWS.findIndex(v=>v[0]===k);
-VIEWS.splice(vi("home")+1,0,["class","🧑‍🏫 کلاس من"],["growth","🎓 رشد من"],["calendar","📅 تقویم"],["ad","📣 تبلیغات"]);
+VIEWS.splice(vi("home")+1,0,["class","🧑‍🏫 کلاس من"],["growth","🎓 رشد من"],["calendar","📅 تقویم"],["ad","📣 تبلیغات"],["ig","📷 اینستاگرام"]);
 VIEWS.splice(vi("finland")+1,0,["songs","🎵 آهنگ‌ها"],["news","🗞️ اخبار روز"]);
 VIEWS.splice(vi("needs")+1,0,["play","🧸 بازی‌درمانی"]);
 const ai = vi("articles"); if(ai>=0) VIEWS[ai][1]="📚 دانش و رشد";
@@ -1834,6 +2099,12 @@ document.addEventListener("click", async e=>{
  const kd = e.target.closest("[data-kid]");
  if(kd){ const k=cur().kids[+kd.dataset.kid]; const v=kd.dataset.v; k.traits=k.traits||[]; k.traits=k.traits.includes(v)?k.traits.filter(x=>x!==v):[...k.traits,v]; kd.classList.toggle("on"); save(); refreshPlan(); return; }
  const kdel = e.target.closest("[data-kiddel]"); if(kdel){ cur().kids.splice(+kdel.dataset.kiddel,1); save(); rerender(true); return; }
+ const mpc = e.target.closest("[data-mp]"); if(mpc){ const k=mpc.dataset.mp; MP[k]=mpc.dataset.v; if(k==="topic"||k==="frame"){ rerender(true); } else { mpc.parentElement.querySelectorAll("[data-mp]").forEach(x=>x.classList.toggle("on",x===mpc)); if(MP.out) mpRun(); } return; }
+ if(e.target.id==="mpGo"){ MP.out=true; mpRun(); return; }
+ if(e.target.id==="mpMore"){ MP.v++; mpRun(); return; }
+ if(e.target.id==="mpAI"){ mpAI(); return; }
+ const igd = e.target.closest("[data-igday]"); if(igd){ igSel=igd.dataset.igday; rerender(true); return; }
+ const igs = e.target.closest("[data-igstyle]"); if(igs){ const s=igSettings(); s.style=igs.dataset.igstyle; igSetSave(s); rerender(true); return; }
  const af = e.target.closest("[data-adf]");
  if(af){ const d=adGet(), k=af.dataset.adf, v=af.dataset.v;
   if(af.dataset.m){ d[k]=d[k]||[]; d[k]=d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]; af.classList.toggle("on"); }
@@ -1870,6 +2141,9 @@ document.addEventListener("click", async e=>{
   e.target.disabled=false; return; }
 });
 document.addEventListener("change", e=>{
+ if(e.target.id==="mpFile"){ MP.files=[...(e.target.files||[])]; MP.out=false; rerender(true); return; }
+ if(e.target.dataset && e.target.dataset.igdone){ let dn={}; try{ dn=JSON.parse(localStorage.getItem("igdone")||"{}"); }catch(x){} dn[e.target.dataset.igdone]=e.target.checked; try{ localStorage.setItem("igdone",JSON.stringify(dn)); }catch(x){} return; }
+ if(e.target.id==="igHandle"){ const s=igSettings(); s.handle=e.target.value; igSetSave(s); igRenderImages(); return; }
  if(e.target.dataset && e.target.dataset.adi!==undefined){ const d=adGet(); d[e.target.dataset.adi]=e.target.value; adSet(d); return; }
  if(e.target.id==="clsDate"){ const c=cur(); if(e.target.value){ c.date=e.target.value; c.occ=""; save(); rerender(true); } return; }
  const d=e.target.dataset||{};
@@ -1879,6 +2153,8 @@ document.addEventListener("change", e=>{
  if(e.target.id==="clsSel"){ ST.active=+e.target.value; showPlan=false; save(); rerender(); }
 });
 document.addEventListener("input", e=>{
+ if(e.target.id==="mpNote"){ MP.note=e.target.value; return; }
+ if(e.target.id==="mpTitle"){ MP.title=e.target.value; return; }
  if(e.target.dataset && e.target.dataset.adi!==undefined){ const d=adGet(); d[e.target.dataset.adi]=e.target.value; adSet(d); return; }
  if(e.target.id==="pdJournal"){ const s=pdState(); s.journal=e.target.value; pdSave(s); return; }
  if(e.target.dataset && e.target.dataset.note!==undefined){ cur().notes=e.target.value; save(); return; }
