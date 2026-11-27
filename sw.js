@@ -1,14 +1,24 @@
-const C="teacher-v5";
-const FILES=["./","index.html","manifest.json","apple-touch-icon.png","icon-192.png","icon-512.png"];
-self.addEventListener("install",e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(FILES)));self.skipWaiting()});
+// Offline-first: the app opens instantly from the phone's cache, even without VPN or internet.
+// New versions are downloaded quietly in the background and used on the next open.
+const C="teacher-v6";
+const FILES=["./","index.html","manifest.json","apple-touch-icon.png","icon-192.png","icon-512.png","news.json"];
+self.addEventListener("install",e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(FILES)).catch(()=>{}));self.skipWaiting()});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))));self.clients.claim()});
+function timeout(ms){return new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),ms));}
+function store(req,res){ if(res && res.ok){ const cp=res.clone(); caches.open(C).then(c=>c.put(req,cp)).catch(()=>{}); } return res; }
 self.addEventListener("fetch",e=>{
-  if(e.request.method!=="GET")return;
-  const url=new URL(e.request.url);
-  const fresh = url.pathname.endsWith("news.json") || url.pathname.endsWith("/") || url.pathname.endsWith("index.html");
-  if(fresh){ // network first: always get newest content and news, fall back to cache offline
-    e.respondWith(fetch(e.request).then(res=>{const cp=res.clone();caches.open(C).then(c=>c.put(e.request,cp));return res;}).catch(()=>caches.match(e.request).then(r=>r||caches.match("index.html"))));
+  const req=e.request; if(req.method!=="GET") return;
+  const url=new URL(req.url);
+  if(url.origin!==location.origin) return; // fonts etc.: let the browser handle (page works without them)
+  if(url.pathname.endsWith("news.json")){
+    // news: try internet for 4 seconds, otherwise show the last saved news
+    e.respondWith(Promise.race([fetch(req,{cache:"no-store"}).then(r=>store(req,r)),timeout(4000)]).catch(()=>caches.match(req,{ignoreSearch:true})));
     return;
   }
-  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{const cp=res.clone();caches.open(C).then(c=>c.put(e.request,cp)).catch(()=>{});return res;})));
+  const key = req.mode==="navigate" ? "index.html" : req;
+  e.respondWith(caches.match(key,{ignoreSearch:true}).then(cached=>{
+    const net = fetch(req).then(r=>store(key,r)).catch(()=>null);
+    if(cached){ e.waitUntil(net); return cached; }
+    return Promise.race([net,timeout(8000)]).then(r=>r||caches.match("index.html")).catch(()=>caches.match("index.html"));
+  }));
 });
